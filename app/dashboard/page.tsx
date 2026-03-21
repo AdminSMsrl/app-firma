@@ -121,7 +121,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-white text-black p-8">
       <section className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold">Area Dipendente</h1>
             <p className="text-gray-600">
@@ -129,12 +129,21 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="border rounded-lg px-4 py-2"
-          >
-            Logout
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <a
+              href="/signature-setup"
+              className="border rounded-lg px-4 py-2 inline-block"
+            >
+              Cambia firma
+            </a>
+
+            <button
+              onClick={handleLogout}
+              className="border rounded-lg px-4 py-2"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm">
