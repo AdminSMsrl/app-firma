@@ -1,12 +1,30 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { supabase } from "@/lib/supabase";
 
 export default function SignatureSetupPage() {
   const sigRef = useRef<SignatureCanvas | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   const [message, setMessage] = useState("");
+  const [canvasWidth, setCanvasWidth] = useState(500);
+
+  useEffect(() => {
+    function updateCanvasWidth() {
+      if (!containerRef.current) return;
+      const width = containerRef.current.offsetWidth;
+      setCanvasWidth(width);
+    }
+
+    updateCanvasWidth();
+    window.addEventListener("resize", updateCanvasWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateCanvasWidth);
+    };
+  }, []);
 
   const clearSignature = () => {
     sigRef.current?.clear();
@@ -69,7 +87,9 @@ export default function SignatureSetupPage() {
 
     if (deactivateError) {
       console.error(deactivateError);
-      setMessage(`Errore aggiornamento firme precedenti: ${deactivateError.message}`);
+      setMessage(
+        `Errore aggiornamento firme precedenti: ${deactivateError.message}`
+      );
       return;
     }
 
@@ -95,21 +115,29 @@ export default function SignatureSetupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-black p-8 flex items-center justify-center">
+    <main className="min-h-screen bg-white text-black p-6 flex items-center justify-center">
       <div className="max-w-lg w-full border rounded-2xl shadow-sm p-6 space-y-4">
         <h1 className="text-3xl font-bold">Deposita firma</h1>
+
         <p className="text-gray-600">
-          Disegna la tua firma nel riquadro qui sotto. Verrà usata per firmare i documenti.
+          Disegna la tua firma nel riquadro qui sotto. Su telefono puoi usare il
+          dito o il pennino.
         </p>
 
-        <div className="border rounded-xl p-2 bg-white">
+        <div
+          ref={containerRef}
+          className="border rounded-xl p-2 bg-white"
+          style={{ touchAction: "none" }}
+        >
           <SignatureCanvas
             ref={sigRef}
             penColor="black"
+            backgroundColor="white"
             canvasProps={{
-              width: 500,
+              width: canvasWidth,
               height: 200,
-              className: "w-full h-[200px]",
+              className: "w-full h-[200px] rounded-lg",
+              style: { touchAction: "none" },
             }}
           />
         </div>
@@ -121,6 +149,7 @@ export default function SignatureSetupPage() {
           >
             Cancella
           </button>
+
           <button
             onClick={handleSave}
             className="flex-1 bg-black text-white rounded-lg px-4 py-2"
