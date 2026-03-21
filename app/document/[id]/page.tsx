@@ -191,7 +191,8 @@ export default function DocumentPage({
     });
 
     const signedPdfBytes = await pdfDoc.save();
-    const signedBlob = new Blob([signedPdfBytes], {
+
+    const signedBlob = new Blob([Buffer.from(signedPdfBytes)], {
       type: "application/pdf",
     });
 
@@ -268,7 +269,9 @@ export default function DocumentPage({
               Busta paga {doc.month}/{doc.year}
             </h1>
             <p className="text-gray-600">
-              {doc.status === "signed" ? "Documento già firmato" : "Documento da firmare"}
+              {doc.status === "signed"
+                ? "Documento già firmato"
+                : "Documento da firmare"}
             </p>
           </div>
 
@@ -293,9 +296,7 @@ export default function DocumentPage({
           <div className="border rounded-2xl p-6 shadow-sm space-y-4">
             <h2 className="text-xl font-semibold">Conferma firma</h2>
 
-            <p>
-              Prima di firmare, verifica il contenuto del documento.
-            </p>
+            <p>Prima di firmare, verifica il contenuto del documento.</p>
 
             <p className="text-sm text-gray-700">
               Confermo di apporre la mia firma elettronica al presente documento
