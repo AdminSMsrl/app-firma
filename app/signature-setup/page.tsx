@@ -132,12 +132,15 @@ export default function SignatureSetupPage() {
           <SignatureCanvas
             ref={sigRef}
             penColor="black"
-            backgroundColor="white"
+            backgroundColor="rgba(0,0,0,0)"
             canvasProps={{
               width: canvasWidth,
               height: 200,
               className: "w-full h-[200px] rounded-lg",
-              style: { touchAction: "none" },
+              style: {
+                touchAction: "none",
+                backgroundColor: "white",
+              },
             }}
           />
         </div>
