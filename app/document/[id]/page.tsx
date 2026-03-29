@@ -171,7 +171,6 @@ export default function DocumentPage({
 
     const pngDims = pngImage.scale(0.34);
 
-    // Firma spostata più in basso e più a destra
     const signatureX = width - pngDims.width - 25;
     const signatureY = 8;
 
@@ -183,12 +182,33 @@ export default function DocumentPage({
     });
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const now = new Date().toLocaleString("it-IT");
 
-    // Data separata dalla firma, più a sinistra
-    lastPage.drawText(`Firmato il: ${now}`, {
-      x: width - 260,
-      y: 20,
+    const now = new Date();
+    const signedDate = now.toLocaleDateString("it-IT");
+    const signedTime = now.toLocaleTimeString("it-IT");
+
+    const textX = width - 260;
+    const textY = 38;
+
+    lastPage.drawText("Firmato il:", {
+      x: textX,
+      y: textY,
+      size: 10,
+      font,
+      color: rgb(0, 0, 0),
+    });
+
+    lastPage.drawText(signedDate, {
+      x: textX,
+      y: textY - 14,
+      size: 10,
+      font,
+      color: rgb(0, 0, 0),
+    });
+
+    lastPage.drawText(signedTime, {
+      x: textX,
+      y: textY - 28,
       size: 10,
       font,
       color: rgb(0, 0, 0),
