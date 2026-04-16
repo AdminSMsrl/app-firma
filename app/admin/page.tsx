@@ -52,11 +52,16 @@ export default function AdminPage() {
     const { data: employeesData, error: employeesError } = await supabase
       .from("employees")
       .select("id, first_name, last_name, email, status")
-      .order("created_at", { ascending: false });
+      .order("last_name", { ascending: true })
+      .order("first_name", { ascending: true });
 
     const { data: documentsData, error: documentsError } = await supabase
       .from("document_overview")
-      .select("*");
+      .select("*")
+      .order("last_name", { ascending: true })
+      .order("first_name", { ascending: true })
+      .order("year", { ascending: false })
+      .order("month", { ascending: false });
 
     if (employeesError) {
       console.error("Errore caricamento dipendenti:", employeesError);
@@ -506,7 +511,7 @@ export default function AdminPage() {
               <option value="">Seleziona dipendente</option>
               {employees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
-                  {employee.first_name} {employee.last_name}
+                  {employee.last_name} {employee.first_name}
                 </option>
               ))}
             </select>
@@ -558,7 +563,7 @@ export default function AdminPage() {
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b text-left">
-                    <th className="py-2">Nome</th>
+                    <th className="py-2">Dipendente</th>
                     <th className="py-2">Email</th>
                     <th className="py-2">Stato</th>
                     <th className="py-2">Azioni</th>
@@ -572,7 +577,7 @@ export default function AdminPage() {
                           href={`/admin/employees/${employee.id}`}
                           className="underline"
                         >
-                          {employee.first_name} {employee.last_name}
+                          {employee.last_name} {employee.first_name}
                         </a>
                       </td>
                       <td className="py-2">{employee.email}</td>
@@ -622,7 +627,7 @@ export default function AdminPage() {
                   {documents.map((doc) => (
                     <tr key={doc.document_id} className="border-b">
                       <td className="py-2">
-                        {doc.first_name} {doc.last_name}
+                        {doc.last_name} {doc.first_name}
                       </td>
                       <td className="py-2">
                         {doc.month}/{doc.year}
