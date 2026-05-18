@@ -84,6 +84,39 @@ export default function AdminPage() {
     loadData();
   }, []);
 
+  const getDocumentTypeLabel = (type?: string | null) => {
+    if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
+    return "Busta paga";
+  };
+
+  const buildDownloadFileName = (doc: DocumentItem) => {
+    const employeeName = `${doc.last_name} ${doc.first_name}`.trim();
+    const documentLabel = getDocumentTypeLabel(doc.document_type);
+    const paddedMonth = String(doc.month).padStart(2, "0");
+
+    return `${employeeName} - ${documentLabel} - ${paddedMonth}-${doc.year}.pdf`;
+  };
+
+  const downloadFileFromSignedUrl = async (signedUrl: string, fileName: string) => {
+    const response = await fetch(signedUrl);
+
+    if (!response.ok) {
+      throw new Error("Errore durante il download del file");
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  };
+
   const handleCreateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage("");
@@ -206,10 +239,10 @@ export default function AdminPage() {
     setUploading(false);
   };
 
-  const handleDownloadOriginal = async (originalFileUrl: string) => {
+  const handleDownloadOriginal = async (doc: DocumentItem) => {
     setMessage("");
 
-    const filePath = originalFileUrl.replace("original-documents/", "");
+    const filePath = doc.original_file_url.replace("original-documents/", "");
 
     const { data, error } = await supabase.storage
       .from("original-documents")
@@ -221,18 +254,23 @@ export default function AdminPage() {
       return;
     }
 
-    window.open(data.signedUrl, "_blank");
+    try {
+      await downloadFileFromSignedUrl(data.signedUrl, buildDownloadFileName(doc));
+    } catch (error) {
+      console.error(error);
+      setMessage("Errore nel download del PDF originale");
+    }
   };
 
-  const handleDownloadSigned = async (signedFileUrl: string | null) => {
-    if (!signedFileUrl) {
+  const handleDownloadSigned = async (doc: DocumentItem) => {
+    if (!doc.signed_file_url) {
       setMessage("PDF firmato non disponibile");
       return;
     }
 
     setMessage("");
 
-    const filePath = signedFileUrl.replace("signed-documents/", "");
+    const filePath = doc.signed_file_url.replace("signed-documents/", "");
 
     const { data, error } = await supabase.storage
       .from("signed-documents")
@@ -244,7 +282,12 @@ export default function AdminPage() {
       return;
     }
 
-    window.open(data.signedUrl, "_blank");
+    try {
+      await downloadFileFromSignedUrl(data.signedUrl, buildDownloadFileName(doc));
+    } catch (error) {
+      console.error(error);
+      setMessage("Errore nel download del PDF firmato");
+    }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -357,11 +400,6 @@ export default function AdminPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/";
-  };
-
-  const getDocumentTypeLabel = (type?: string | null) => {
-    if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
-    return "Busta paga";
   };
 
   if (loading) {
@@ -658,18 +696,14 @@ export default function AdminPage() {
                       <td className="py-2">
                         <div className="flex gap-2 flex-wrap">
                           <button
-                            onClick={() =>
-                              handleDownloadOriginal(doc.original_file_url)
-                            }
+                            onClick={() => handleDownloadOriginal(doc)}
                             className="px-3 py-1 rounded-lg border"
                           >
                             PDF originale
                           </button>
 
                           <button
-                            onClick={() =>
-                              handleDownloadSigned(doc.signed_file_url)
-                            }
+                            onClick={() => handleDownloadSigned(doc)}
                             className="px-3 py-1 rounded-lg border"
                           >
                             PDF firmato
