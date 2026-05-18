@@ -89,6 +89,29 @@ export default function AdminPage() {
     return "Busta paga";
   };
 
+  const getDocumentStatusLabel = (status: string) => {
+    if (status === "signed") return "Firmato";
+    if (status === "viewed") return "Visualizzato";
+    if (status === "available") return "Da firmare";
+    return status;
+  };
+
+  const getDocumentStatusClass = (status: string) => {
+    if (status === "signed") {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+
+    if (status === "viewed") {
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    }
+
+    if (status === "available") {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+
+    return "bg-gray-100 text-gray-700 border-gray-200";
+  };
+
   const buildDownloadFileName = (doc: DocumentItem) => {
     const employeeName = `${doc.last_name} ${doc.first_name}`.trim();
     const documentLabel = getDocumentTypeLabel(doc.document_type);
@@ -97,7 +120,10 @@ export default function AdminPage() {
     return `${employeeName} - ${documentLabel} - ${paddedMonth}-${doc.year}.pdf`;
   };
 
-  const downloadFileFromSignedUrl = async (signedUrl: string, fileName: string) => {
+  const downloadFileFromSignedUrl = async (
+    signedUrl: string,
+    fileName: string
+  ) => {
     const response = await fetch(signedUrl);
 
     if (!response.ok) {
@@ -692,7 +718,15 @@ export default function AdminPage() {
                       <td className="py-2">
                         {doc.month}/{doc.year}
                       </td>
-                      <td className="py-2">{doc.status}</td>
+                      <td className="py-2">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getDocumentStatusClass(
+                            doc.status
+                          )}`}
+                        >
+                          {getDocumentStatusLabel(doc.status)}
+                        </span>
+                      </td>
                       <td className="py-2">
                         <div className="flex gap-2 flex-wrap">
                           <button
