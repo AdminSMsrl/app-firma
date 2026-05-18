@@ -27,6 +27,16 @@ type DocumentItem = {
   document_type?: string | null;
 };
 
+type DocumentGroup = {
+  key: string;
+  month: number;
+  year: number;
+  total: number;
+  signed: number;
+  viewed: number;
+  available: number;
+};
+
 export default function AdminPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -83,6 +93,54 @@ export default function AdminPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const getMonthName = (monthNumber: number) => {
+    const months = [
+      "Gennaio",
+      "Febbraio",
+      "Marzo",
+      "Aprile",
+      "Maggio",
+      "Giugno",
+      "Luglio",
+      "Agosto",
+      "Settembre",
+      "Ottobre",
+      "Novembre",
+      "Dicembre",
+    ];
+
+    return months[monthNumber - 1] || `Mese ${monthNumber}`;
+  };
+
+  const documentGroups: DocumentGroup[] = Object.values(
+    documents.reduce<Record<string, DocumentGroup>>((acc, doc) => {
+      const key = `${doc.year}-${doc.month}`;
+
+      if (!acc[key]) {
+        acc[key] = {
+          key,
+          month: doc.month,
+          year: doc.year,
+          total: 0,
+          signed: 0,
+          viewed: 0,
+          available: 0,
+        };
+      }
+
+      acc[key].total += 1;
+
+      if (doc.status === "signed") acc[key].signed += 1;
+      if (doc.status === "viewed") acc[key].viewed += 1;
+      if (doc.status === "available") acc[key].available += 1;
+
+      return acc;
+    }, {})
+  ).sort((a, b) => {
+    if (b.year !== a.year) return b.year - a.year;
+    return b.month - a.month;
+  });
 
   const getDocumentTypeLabel = (type?: string | null) => {
     if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
@@ -685,6 +743,48 @@ export default function AdminPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        <div className="border rounded-2xl p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">
+            Riepilogo documenti per periodo
+          </h2>
+
+          {documentGroups.length === 0 ? (
+            <p>Nessun periodo presente.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {documentGroups.map((group) => (
+                <div
+                  key={group.key}
+                  className="border rounded-2xl p-4 shadow-sm space-y-3"
+                >
+                  <div>
+                    <p className="text-lg font-semibold">
+                      {getMonthName(group.month)} {group.year}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {group.total} documenti totali
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 border-green-200">
+                      Firmati: {group.signed}
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-yellow-100 text-yellow-700 border-yellow-200">
+                      Visualizzati: {group.viewed}
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 border-red-200">
+                      Da firmare: {group.available}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
