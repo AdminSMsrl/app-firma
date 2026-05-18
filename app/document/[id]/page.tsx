@@ -191,7 +191,7 @@ export default function DocumentPage({
 
       lastPage.drawText(signedDate, {
         x: 110,
-        y: 160,
+        y: 168,
         size: 9,
         font,
         color: rgb(0, 0, 0),
