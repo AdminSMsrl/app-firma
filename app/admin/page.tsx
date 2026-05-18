@@ -24,6 +24,7 @@ type DocumentItem = {
   uploaded_at: string;
   viewed_at: string | null;
   signed_at: string | null;
+  document_type?: string | null;
 };
 
 export default function AdminPage() {
@@ -33,6 +34,7 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
 
   const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [documentType, setDocumentType] = useState("payslip");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -143,7 +145,7 @@ export default function AdminPage() {
     e.preventDefault();
     setMessage("");
 
-    if (!selectedEmployee || !month || !year || !file) {
+    if (!selectedEmployee || !documentType || !month || !year || !file) {
       setMessage("Compila tutti i campi e seleziona un PDF");
       return;
     }
@@ -155,7 +157,7 @@ export default function AdminPage() {
 
     setUploading(true);
 
-    const safeFileName = `${selectedEmployee}-${month}-${year}-${Date.now()}.pdf`;
+    const safeFileName = `${selectedEmployee}-${documentType}-${month}-${year}-${Date.now()}.pdf`;
     const storagePath = `${selectedEmployee}/${safeFileName}`;
 
     const { error: uploadError } = await supabase.storage
@@ -174,6 +176,7 @@ export default function AdminPage() {
 
     const { error: insertError } = await supabase.from("documents").insert({
       employee_id: selectedEmployee,
+      document_type: documentType,
       month: Number(month),
       year: Number(year),
       original_file_url: `original-documents/${storagePath}`,
@@ -189,6 +192,7 @@ export default function AdminPage() {
 
     setMessage("PDF caricato correttamente");
     setSelectedEmployee("");
+    setDocumentType("payslip");
     setMonth("");
     setYear("");
     setFile(null);
@@ -245,7 +249,7 @@ export default function AdminPage() {
 
   const handleDeleteDocument = async (documentId: string) => {
     const confirmed = window.confirm(
-      "Sei sicuro di voler eliminare questa busta paga? L'operazione è definitiva."
+      "Sei sicuro di voler eliminare questo documento? L'operazione è definitiva."
     );
 
     if (!confirmed) return;
@@ -355,6 +359,11 @@ export default function AdminPage() {
     window.location.href = "/";
   };
 
+  const getDocumentTypeLabel = (type?: string | null) => {
+    if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
+    return "Busta paga";
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
@@ -370,7 +379,7 @@ export default function AdminPage() {
           <div>
             <h1 className="text-3xl font-bold">Dashboard Admin</h1>
             <p className="text-gray-600">
-              Gestione dipendenti e monitoraggio buste paga.
+              Gestione dipendenti e monitoraggio documenti.
             </p>
           </div>
 
@@ -497,11 +506,11 @@ export default function AdminPage() {
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm space-y-4">
-          <h2 className="text-xl font-semibold">Carica busta paga</h2>
+          <h2 className="text-xl font-semibold">Carica documento</h2>
 
           <form
             onSubmit={handleUpload}
-            className="grid grid-cols-1 md:grid-cols-4 gap-4"
+            className="grid grid-cols-1 md:grid-cols-5 gap-4"
           >
             <select
               className="border rounded-lg px-4 py-2"
@@ -514,6 +523,15 @@ export default function AdminPage() {
                   {employee.last_name} {employee.first_name}
                 </option>
               ))}
+            </select>
+
+            <select
+              className="border rounded-lg px-4 py-2"
+              value={documentType}
+              onChange={(e) => setDocumentType(e.target.value)}
+            >
+              <option value="payslip">Busta paga</option>
+              <option value="tax_bonus_form">Modulo imposta sostitutiva</option>
             </select>
 
             <input
@@ -546,7 +564,7 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={uploading}
-              className="md:col-span-4 bg-black text-white rounded-lg px-4 py-2 disabled:opacity-50"
+              className="md:col-span-5 bg-black text-white rounded-lg px-4 py-2 disabled:opacity-50"
             >
               {uploading ? "Caricamento..." : "Carica PDF"}
             </button>
@@ -618,6 +636,7 @@ export default function AdminPage() {
                 <thead>
                   <tr className="border-b text-left">
                     <th className="py-2">Dipendente</th>
+                    <th className="py-2">Tipo</th>
                     <th className="py-2">Periodo</th>
                     <th className="py-2">Stato</th>
                     <th className="py-2">Azioni</th>
@@ -628,6 +647,9 @@ export default function AdminPage() {
                     <tr key={doc.document_id} className="border-b">
                       <td className="py-2">
                         {doc.last_name} {doc.first_name}
+                      </td>
+                      <td className="py-2">
+                        {getDocumentTypeLabel(doc.document_type)}
                       </td>
                       <td className="py-2">
                         {doc.month}/{doc.year}
