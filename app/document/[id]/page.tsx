@@ -12,6 +12,7 @@ type DocType = {
   status: string;
   original_file_url: string;
   signed_file_url: string | null;
+  document_type?: string | null;
 };
 
 type SignatureType = {
@@ -169,50 +170,72 @@ export default function DocumentPage({
     const lastPage = pages[pages.length - 1];
     const { width } = lastPage.getSize();
 
-    const pngDims = pngImage.scale(0.34);
-
-    const signatureX = width - pngDims.width - 25;
-    const signatureY = 8;
-
-    lastPage.drawImage(pngImage, {
-      x: signatureX,
-      y: signatureY,
-      width: pngDims.width,
-      height: pngDims.height,
-    });
-
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     const now = new Date();
     const signedDate = now.toLocaleDateString("it-IT");
     const signedTime = now.toLocaleTimeString("it-IT");
 
-    const textX = width - 260;
-    const textY = 38;
+    if (doc.document_type === "tax_bonus_form") {
+      const pngDims = pngImage.scale(0.27);
 
-    lastPage.drawText("Firmato il:", {
-      x: textX,
-      y: textY,
-      size: 10,
-      font,
-      color: rgb(0, 0, 0),
-    });
+      const signatureX = width - pngDims.width - 145;
+      const signatureY = 105;
 
-    lastPage.drawText(signedDate, {
-      x: textX,
-      y: textY - 14,
-      size: 10,
-      font,
-      color: rgb(0, 0, 0),
-    });
+      lastPage.drawImage(pngImage, {
+        x: signatureX,
+        y: signatureY,
+        width: pngDims.width,
+        height: pngDims.height,
+      });
 
-    lastPage.drawText(signedTime, {
-      x: textX,
-      y: textY - 28,
-      size: 10,
-      font,
-      color: rgb(0, 0, 0),
-    });
+      lastPage.drawText(signedDate, {
+        x: 110,
+        y: 122,
+        size: 9,
+        font,
+        color: rgb(0, 0, 0),
+      });
+    } else {
+      const pngDims = pngImage.scale(0.34);
+
+      const signatureX = width - pngDims.width - 25;
+      const signatureY = 8;
+
+      lastPage.drawImage(pngImage, {
+        x: signatureX,
+        y: signatureY,
+        width: pngDims.width,
+        height: pngDims.height,
+      });
+
+      const textX = width - 260;
+      const textY = 38;
+
+      lastPage.drawText("Firmato il:", {
+        x: textX,
+        y: textY,
+        size: 10,
+        font,
+        color: rgb(0, 0, 0),
+      });
+
+      lastPage.drawText(signedDate, {
+        x: textX,
+        y: textY - 14,
+        size: 10,
+        font,
+        color: rgb(0, 0, 0),
+      });
+
+      lastPage.drawText(signedTime, {
+        x: textX,
+        y: textY - 28,
+        size: 10,
+        font,
+        color: rgb(0, 0, 0),
+      });
+    }
 
     const signedPdfBytes = await pdfDoc.save();
 
@@ -276,6 +299,16 @@ export default function DocumentPage({
     }, 1200);
   };
 
+  const getDocumentTitle = () => {
+    if (!doc) return "Documento";
+
+    if (doc.document_type === "tax_bonus_form") {
+      return `Modulo imposta sostitutiva ${doc.month}/${doc.year}`;
+    }
+
+    return `Busta paga ${doc.month}/${doc.year}`;
+  };
+
   if (!doc) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-white text-black">
@@ -289,9 +322,7 @@ export default function DocumentPage({
       <section className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">
-              Busta paga {doc.month}/{doc.year}
-            </h1>
+            <h1 className="text-3xl font-bold">{getDocumentTitle()}</h1>
             <p className="text-gray-600">
               {doc.status === "signed"
                 ? "Documento già firmato"
