@@ -180,7 +180,7 @@ export default function DocumentPage({
       const pngDims = pngImage.scale(0.27);
 
       const signatureX = width - pngDims.width - 145;
-      const signatureY = 125;
+      const signatureY = 145;
 
       lastPage.drawImage(pngImage, {
         x: signatureX,
@@ -191,7 +191,7 @@ export default function DocumentPage({
 
       lastPage.drawText(signedDate, {
         x: 110,
-        y: 125,
+        y: 145,
         size: 9,
         font,
         color: rgb(0, 0, 0),
