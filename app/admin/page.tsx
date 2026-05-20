@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import JSZip from "jszip";
 import { supabase } from "@/lib/supabase";
 
 type Employee = {
@@ -49,6 +50,7 @@ export default function AdminPage() {
   const [year, setYear] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [downloadingZip, setDownloadingZip] = useState("");
 
   const [creatingEmployee, setCreatingEmployee] = useState(false);
   const [employeeForm, setEmployeeForm] = useState({
@@ -199,6 +201,77 @@ export default function AdminPage() {
 
     link.remove();
     URL.revokeObjectURL(objectUrl);
+  };
+
+  const handleDownloadSignedZip = async (month: number, year: number) => {
+    const groupKey = `${year}-${month}`;
+
+    try {
+      setMessage("Preparazione archivio ZIP...");
+      setDownloadingZip(groupKey);
+
+      const signedDocuments = documents.filter(
+        (doc) =>
+          doc.month === month &&
+          doc.year === year &&
+          doc.status === "signed" &&
+          doc.signed_file_url
+      );
+
+      if (signedDocuments.length === 0) {
+        setMessage("Nessun PDF firmato disponibile per questo periodo");
+        setDownloadingZip("");
+        return;
+      }
+
+      const zip = new JSZip();
+
+      for (const doc of signedDocuments) {
+        if (!doc.signed_file_url) continue;
+
+        const filePath = doc.signed_file_url.replace("signed-documents/", "");
+
+        const { data, error } = await supabase.storage
+          .from("signed-documents")
+          .createSignedUrl(filePath, 3600);
+
+        if (error || !data?.signedUrl) {
+          console.error(error);
+          continue;
+        }
+
+        const response = await fetch(data.signedUrl);
+
+        if (!response.ok) continue;
+
+        const blob = await response.blob();
+
+        zip.file(buildDownloadFileName(doc), blob);
+      }
+
+      const zipBlob = await zip.generateAsync({
+        type: "blob",
+      });
+
+      const objectUrl = URL.createObjectURL(zipBlob);
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `PDF Firmati ${getMonthName(month)} ${year}.zip`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+
+      setMessage("ZIP scaricato correttamente");
+    } catch (error) {
+      console.error(error);
+      setMessage("Errore creazione archivio ZIP");
+    }
+
+    setDownloadingZip("");
   };
 
   const handleCreateEmployee = async (e: React.FormEvent) => {
@@ -782,6 +855,20 @@ export default function AdminPage() {
                     <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 border-red-200">
                       Da firmare: {group.available}
                     </span>
+
+                    <button
+                      onClick={() =>
+                        handleDownloadSignedZip(group.month, group.year)
+                      }
+                      disabled={
+                        group.signed === 0 || downloadingZip === group.key
+                      }
+                      className="w-full mt-2 border rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloadingZip === group.key
+                        ? "Preparazione ZIP..."
+                        : "Scarica PDF firmati"}
+                    </button>
                   </div>
                 </div>
               ))}
