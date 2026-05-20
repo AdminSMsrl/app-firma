@@ -10,6 +10,7 @@ type DocumentItem = {
   status: string;
   original_file_url: string;
   signed_file_url: string | null;
+  document_type?: string | null;
 };
 
 export default function DashboardPage() {
@@ -58,8 +59,12 @@ export default function DashboardPage() {
 
       const { data: docs } = await supabase
         .from("documents")
-        .select("id, month, year, status, original_file_url, signed_file_url")
+        .select(
+          "id, month, year, status, original_file_url, signed_file_url, document_type"
+        )
         .eq("employee_id", profile.employee_id)
+        .order("year", { ascending: false })
+        .order("month", { ascending: false })
         .order("uploaded_at", { ascending: false });
 
       setDocuments(docs || []);
@@ -68,6 +73,14 @@ export default function DashboardPage() {
 
     loadEmployeeDocuments();
   }, []);
+
+  const payslips = documents.filter(
+    (doc) => !doc.document_type || doc.document_type === "payslip"
+  );
+
+  const otherForms = documents.filter(
+    (doc) => doc.document_type && doc.document_type !== "payslip"
+  );
 
   const handleDownloadSignedPdf = async (signedFileUrl: string | null) => {
     if (!signedFileUrl) {
@@ -99,6 +112,7 @@ export default function DashboardPage() {
 
   const getStatusLabel = (status: string) => {
     if (status === "signed") return "Firmato";
+    if (status === "viewed") return "Visualizzato";
     return "Da firmare";
   };
 
@@ -107,8 +121,64 @@ export default function DashboardPage() {
       return "bg-green-100 text-green-700 border-green-200";
     }
 
-    return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    if (status === "viewed") {
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    }
+
+    return "bg-red-100 text-red-700 border-red-200";
   };
+
+  const getDocumentTypeLabel = (type?: string | null) => {
+    if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
+    return "Modulo";
+  };
+
+  const renderDocumentCard = (
+    doc: DocumentItem,
+    title: string
+  ) => (
+    <div
+      key={doc.id}
+      className="border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+    >
+      <div className="space-y-2">
+        <p className="font-semibold">{title}</p>
+
+        <span
+          className={`inline-block px-3 py-1 rounded-full text-sm border ${getStatusStyle(
+            doc.status
+          )}`}
+        >
+          {getStatusLabel(doc.status)}
+        </span>
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <a
+          href={`/document/${doc.id}`}
+          className="px-4 py-2 rounded-lg border inline-block"
+        >
+          Apri documento
+        </a>
+
+        {doc.status !== "signed" ? (
+          <a
+            href={`/document/${doc.id}`}
+            className="px-4 py-2 rounded-lg bg-black text-white inline-block"
+          >
+            Firma ora
+          </a>
+        ) : (
+          <button
+            onClick={() => handleDownloadSignedPdf(doc.signed_file_url)}
+            className="px-4 py-2 rounded-lg border"
+          >
+            Scarica PDF firmato
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -125,7 +195,7 @@ export default function DashboardPage() {
           <div>
             <h1 className="text-3xl font-bold">Area Dipendente</h1>
             <p className="text-gray-600">
-              Qui puoi visualizzare e firmare le tue buste paga.
+              Qui puoi visualizzare e firmare i tuoi documenti.
             </p>
           </div>
 
@@ -149,55 +219,30 @@ export default function DashboardPage() {
         <div className="border rounded-2xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4">Le tue buste paga</h2>
 
-          {documents.length === 0 ? (
-            <p>Nessun documento disponibile.</p>
+          {payslips.length === 0 ? (
+            <p>Nessuna busta paga disponibile.</p>
           ) : (
             <div className="space-y-4">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-                >
-                  <div className="space-y-2">
-                    <p className="font-semibold">
-                      Busta paga {doc.month}/{doc.year}
-                    </p>
+              {payslips.map((doc) =>
+                renderDocumentCard(doc, `Busta paga ${doc.month}/${doc.year}`)
+              )}
+            </div>
+          )}
+        </div>
 
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-sm border ${getStatusStyle(
-                        doc.status
-                      )}`}
-                    >
-                      {getStatusLabel(doc.status)}
-                    </span>
-                  </div>
+        <div className="border rounded-2xl p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4">Moduli vari</h2>
 
-                  <div className="flex gap-2 flex-wrap">
-                    <a
-                      href={`/document/${doc.id}`}
-                      className="px-4 py-2 rounded-lg border inline-block"
-                    >
-                      Apri documento
-                    </a>
-
-                    {doc.status !== "signed" ? (
-                      <a
-                        href={`/document/${doc.id}`}
-                        className="px-4 py-2 rounded-lg bg-black text-white inline-block"
-                      >
-                        Firma ora
-                      </a>
-                    ) : (
-                      <button
-                        onClick={() => handleDownloadSignedPdf(doc.signed_file_url)}
-                        className="px-4 py-2 rounded-lg border"
-                      >
-                        Scarica PDF firmato
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+          {otherForms.length === 0 ? (
+            <p>Nessun modulo disponibile.</p>
+          ) : (
+            <div className="space-y-4">
+              {otherForms.map((doc) =>
+                renderDocumentCard(
+                  doc,
+                  `${getDocumentTypeLabel(doc.document_type)} ${doc.month}/${doc.year}`
+                )
+              )}
             </div>
           )}
 
