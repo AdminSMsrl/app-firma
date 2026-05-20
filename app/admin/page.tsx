@@ -44,6 +44,12 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
+  const [employeeSearch, setEmployeeSearch] = useState("");
+  const [documentSearch, setDocumentSearch] = useState("");
+  const [documentPeriodFilter, setDocumentPeriodFilter] = useState("all");
+  const [documentStatusFilter, setDocumentStatusFilter] = useState("all");
+  const [documentTypeFilter, setDocumentTypeFilter] = useState("all");
+
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [documentType, setDocumentType] = useState("payslip");
   const [month, setMonth] = useState("");
@@ -144,6 +150,11 @@ export default function AdminPage() {
     return b.month - a.month;
   });
 
+  const documentPeriods = documentGroups.map((group) => ({
+    key: group.key,
+    label: `${getMonthName(group.month)} ${group.year}`,
+  }));
+
   const getDocumentTypeLabel = (type?: string | null) => {
     if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
     return "Busta paga";
@@ -154,6 +165,24 @@ export default function AdminPage() {
     if (status === "viewed") return "Visualizzato";
     if (status === "available") return "Da firmare";
     return status;
+  };
+
+  const getEmployeeStatusLabel = (status: string) => {
+    if (status === "active") return "Attivo";
+    if (status === "suspended") return "Sospeso";
+    return status;
+  };
+
+  const getEmployeeStatusClass = (status: string) => {
+    if (status === "active") {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+
+    if (status === "suspended") {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+
+    return "bg-gray-100 text-gray-700 border-gray-200";
   };
 
   const getDocumentStatusClass = (status: string) => {
@@ -171,6 +200,36 @@ export default function AdminPage() {
 
     return "bg-gray-100 text-gray-700 border-gray-200";
   };
+
+  const filteredEmployees = employees.filter((employee) => {
+    const query = employeeSearch.toLowerCase().trim();
+
+    if (!query) return true;
+
+    const fullText = `${employee.last_name} ${employee.first_name} ${employee.email}`.toLowerCase();
+
+    return fullText.includes(query);
+  });
+
+  const filteredDocuments = documents.filter((doc) => {
+    const query = documentSearch.toLowerCase().trim();
+
+    const fullText = `${doc.last_name} ${doc.first_name} ${doc.email} ${getDocumentTypeLabel(
+      doc.document_type
+    )} ${doc.month}/${doc.year}`.toLowerCase();
+
+    const matchesSearch = !query || fullText.includes(query);
+    const matchesPeriod =
+      documentPeriodFilter === "all" ||
+      documentPeriodFilter === `${doc.year}-${doc.month}`;
+    const matchesStatus =
+      documentStatusFilter === "all" || documentStatusFilter === doc.status;
+    const matchesType =
+      documentTypeFilter === "all" ||
+      documentTypeFilter === (doc.document_type || "payslip");
+
+    return matchesSearch && matchesPeriod && matchesStatus && matchesType;
+  });
 
   const buildDownloadFileName = (doc: DocumentItem) => {
     const employeeName = `${doc.last_name} ${doc.first_name}`.trim();
@@ -767,35 +826,58 @@ export default function AdminPage() {
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Dipendenti</h2>
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Dipendenti</h2>
+              <p className="text-sm text-gray-500">
+                Visualizzati {filteredEmployees.length} su {employees.length}
+              </p>
+            </div>
 
-          {employees.length === 0 ? (
-            <p>Nessun dipendente presente.</p>
+            <input
+              type="text"
+              placeholder="Cerca per nome, cognome o email"
+              className="border rounded-lg px-4 py-2 w-full md:w-80"
+              value={employeeSearch}
+              onChange={(e) => setEmployeeSearch(e.target.value)}
+            />
+          </div>
+
+          {filteredEmployees.length === 0 ? (
+            <p>Nessun dipendente trovato.</p>
           ) : (
-            <div className="overflow-auto">
+            <div className="overflow-auto max-h-[360px] border rounded-xl">
               <table className="w-full text-sm border-collapse">
-                <thead>
+                <thead className="sticky top-0 bg-white">
                   <tr className="border-b text-left">
-                    <th className="py-2">Dipendente</th>
-                    <th className="py-2">Email</th>
-                    <th className="py-2">Stato</th>
-                    <th className="py-2">Azioni</th>
+                    <th className="py-2 px-3">Dipendente</th>
+                    <th className="py-2 px-3">Email</th>
+                    <th className="py-2 px-3">Stato</th>
+                    <th className="py-2 px-3">Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {employees.map((employee) => (
+                  {filteredEmployees.map((employee) => (
                     <tr key={employee.id} className="border-b">
-                      <td className="py-2">
+                      <td className="py-2 px-3">
                         <a
                           href={`/admin/employees/${employee.id}`}
-                          className="underline"
+                          className="underline font-medium"
                         >
                           {employee.last_name} {employee.first_name}
                         </a>
                       </td>
-                      <td className="py-2">{employee.email}</td>
-                      <td className="py-2">{employee.status}</td>
-                      <td className="py-2">
+                      <td className="py-2 px-3">{employee.email}</td>
+                      <td className="py-2 px-3">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(
+                            employee.status
+                          )}`}
+                        >
+                          {getEmployeeStatusLabel(employee.status)}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3">
                         <div className="flex gap-2 flex-wrap">
                           <button
                             onClick={() => handleSuspendEmployee(employee.id)}
@@ -877,35 +959,86 @@ export default function AdminPage() {
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Documenti</h2>
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Documenti</h2>
+              <p className="text-sm text-gray-500">
+                Visualizzati {filteredDocuments.length} su {documents.length}
+              </p>
+            </div>
 
-          {documents.length === 0 ? (
-            <p>Nessun documento presente.</p>
+            <input
+              type="text"
+              placeholder="Cerca documento o dipendente"
+              className="border rounded-lg px-4 py-2 w-full md:w-80"
+              value={documentSearch}
+              onChange={(e) => setDocumentSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <select
+              className="border rounded-lg px-4 py-2"
+              value={documentPeriodFilter}
+              onChange={(e) => setDocumentPeriodFilter(e.target.value)}
+            >
+              <option value="all">Tutti i periodi</option>
+              {documentPeriods.map((period) => (
+                <option key={period.key} value={period.key}>
+                  {period.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="border rounded-lg px-4 py-2"
+              value={documentStatusFilter}
+              onChange={(e) => setDocumentStatusFilter(e.target.value)}
+            >
+              <option value="all">Tutti gli stati</option>
+              <option value="signed">Firmati</option>
+              <option value="viewed">Visualizzati</option>
+              <option value="available">Da firmare</option>
+            </select>
+
+            <select
+              className="border rounded-lg px-4 py-2"
+              value={documentTypeFilter}
+              onChange={(e) => setDocumentTypeFilter(e.target.value)}
+            >
+              <option value="all">Tutti i tipi</option>
+              <option value="payslip">Buste paga</option>
+              <option value="tax_bonus_form">Modulo imposta sostitutiva</option>
+            </select>
+          </div>
+
+          {filteredDocuments.length === 0 ? (
+            <p>Nessun documento trovato.</p>
           ) : (
-            <div className="overflow-auto">
+            <div className="overflow-auto max-h-[520px] border rounded-xl">
               <table className="w-full text-sm border-collapse">
-                <thead>
+                <thead className="sticky top-0 bg-white">
                   <tr className="border-b text-left">
-                    <th className="py-2">Dipendente</th>
-                    <th className="py-2">Tipo</th>
-                    <th className="py-2">Periodo</th>
-                    <th className="py-2">Stato</th>
-                    <th className="py-2">Azioni</th>
+                    <th className="py-2 px-3">Dipendente</th>
+                    <th className="py-2 px-3">Tipo</th>
+                    <th className="py-2 px-3">Periodo</th>
+                    <th className="py-2 px-3">Stato</th>
+                    <th className="py-2 px-3">Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {documents.map((doc) => (
+                  {filteredDocuments.map((doc) => (
                     <tr key={doc.document_id} className="border-b">
-                      <td className="py-2">
+                      <td className="py-2 px-3">
                         {doc.last_name} {doc.first_name}
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 px-3">
                         {getDocumentTypeLabel(doc.document_type)}
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 px-3">
                         {doc.month}/{doc.year}
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 px-3">
                         <span
                           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getDocumentStatusClass(
                             doc.status
@@ -914,7 +1047,7 @@ export default function AdminPage() {
                           {getDocumentStatusLabel(doc.status)}
                         </span>
                       </td>
-                      <td className="py-2">
+                      <td className="py-2 px-3">
                         <div className="flex gap-2 flex-wrap">
                           <button
                             onClick={() => handleDownloadOriginal(doc)}
