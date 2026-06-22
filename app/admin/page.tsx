@@ -32,6 +32,7 @@ type DocumentGroup = {
   key: string;
   month: number;
   year: number;
+  category: "payslip" | "other";
   total: number;
   signed: number;
   viewed: number;
@@ -121,15 +122,26 @@ export default function AdminPage() {
     return months[monthNumber - 1] || `Mese ${monthNumber}`;
   };
 
+  const getDocumentCategory = (type?: string | null): "payslip" | "other" => {
+    return !type || type === "payslip" ? "payslip" : "other";
+  };
+
+  const getDocumentCategoryLabel = (category: "payslip" | "other") => {
+    if (category === "payslip") return "Buste paga";
+    return "Altri documenti";
+  };
+
   const documentGroups: DocumentGroup[] = Object.values(
     documents.reduce<Record<string, DocumentGroup>>((acc, doc) => {
-      const key = `${doc.year}-${doc.month}`;
+      const category = getDocumentCategory(doc.document_type);
+      const key = `${doc.year}-${doc.month}-${category}`;
 
       if (!acc[key]) {
         acc[key] = {
           key,
           month: doc.month,
           year: doc.year,
+          category,
           total: 0,
           signed: 0,
           viewed: 0,
@@ -147,13 +159,29 @@ export default function AdminPage() {
     }, {})
   ).sort((a, b) => {
     if (b.year !== a.year) return b.year - a.year;
-    return b.month - a.month;
+    if (b.month !== a.month) return b.month - a.month;
+    if (a.category === "payslip" && b.category === "other") return -1;
+    if (a.category === "other" && b.category === "payslip") return 1;
+    return 0;
   });
 
-  const documentPeriods = documentGroups.map((group) => ({
-    key: group.key,
-    label: `${getMonthName(group.month)} ${group.year}`,
-  }));
+  const documentPeriods = Object.values(
+    documents.reduce<Record<string, { key: string; label: string }>>(
+      (acc, doc) => {
+        const key = `${doc.year}-${doc.month}`;
+
+        if (!acc[key]) {
+          acc[key] = {
+            key,
+            label: `${getMonthName(doc.month)} ${doc.year}`,
+          };
+        }
+
+        return acc;
+      },
+      {}
+    )
+  );
 
   const getDocumentTypeLabel = (type?: string | null) => {
     if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
@@ -262,8 +290,12 @@ export default function AdminPage() {
     URL.revokeObjectURL(objectUrl);
   };
 
-  const handleDownloadSignedZip = async (month: number, year: number) => {
-    const groupKey = `${year}-${month}`;
+  const handleDownloadSignedZip = async (
+    month: number,
+    year: number,
+    category: "payslip" | "other"
+  ) => {
+    const groupKey = `${year}-${month}-${category}`;
 
     try {
       setMessage("Preparazione archivio ZIP...");
@@ -273,12 +305,13 @@ export default function AdminPage() {
         (doc) =>
           doc.month === month &&
           doc.year === year &&
+          getDocumentCategory(doc.document_type) === category &&
           doc.status === "signed" &&
           doc.signed_file_url
       );
 
       if (signedDocuments.length === 0) {
-        setMessage("Nessun PDF firmato disponibile per questo periodo");
+        setMessage("Nessun PDF firmato disponibile per questa sezione");
         setDownloadingZip("");
         return;
       }
@@ -316,7 +349,9 @@ export default function AdminPage() {
 
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = `PDF Firmati ${getMonthName(month)} ${year}.zip`;
+      link.download = `${getDocumentCategoryLabel(category)} firmati ${getMonthName(
+        month
+      )} ${year}.zip`;
 
       document.body.appendChild(link);
       link.click();
@@ -920,6 +955,9 @@ export default function AdminPage() {
                     <p className="text-lg font-semibold">
                       {getMonthName(group.month)} {group.year}
                     </p>
+                    <p className="text-sm text-gray-700 font-medium">
+                      {getDocumentCategoryLabel(group.category)}
+                    </p>
                     <p className="text-sm text-gray-500">
                       {group.total} documenti totali
                     </p>
@@ -940,7 +978,11 @@ export default function AdminPage() {
 
                     <button
                       onClick={() =>
-                        handleDownloadSignedZip(group.month, group.year)
+                        handleDownloadSignedZip(
+                          group.month,
+                          group.year,
+                          group.category
+                        )
                       }
                       disabled={
                         group.signed === 0 || downloadingZip === group.key
@@ -949,7 +991,7 @@ export default function AdminPage() {
                     >
                       {downloadingZip === group.key
                         ? "Preparazione ZIP..."
-                        : "Scarica PDF firmati"}
+                        : `Scarica ${getDocumentCategoryLabel(group.category)}`}
                     </button>
                   </div>
                 </div>
