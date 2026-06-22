@@ -29,6 +29,11 @@ type DocumentItem = {
   document_type?: string | null;
 };
 
+type CompanyGroup = {
+  name: string;
+  total: number;
+};
+
 type DocumentGroup = {
   key: string;
   month: number;
@@ -263,6 +268,24 @@ export default function AdminPage() {
 
     return matchesSearch && matchesPeriod && matchesStatus && matchesType;
   });
+
+const companyGroups: CompanyGroup[] = Object.values(
+  employees.reduce<Record<string, CompanyGroup>>((acc, employee) => {
+    const companyName =
+      employee.company_name?.trim() || "Senza appalto";
+
+    if (!acc[companyName]) {
+      acc[companyName] = {
+        name: companyName,
+        total: 0,
+      };
+    }
+
+    acc[companyName].total += 1;
+
+    return acc;
+  }, {})
+).sort((a, b) => b.total - a.total);
 
   const buildDownloadFileName = (doc: DocumentItem) => {
     const employeeName = `${doc.last_name} ${doc.first_name}`.trim();
@@ -705,6 +728,35 @@ export default function AdminPage() {
             </p>
           </div>
         </div>
+<div className="border rounded-2xl p-6 shadow-sm">
+  <h2 className="text-xl font-semibold mb-4">
+    Riepilogo appalti / clienti
+  </h2>
+
+  {companyGroups.length === 0 ? (
+    <p>Nessun appalto presente.</p>
+  ) : (
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {companyGroups.map((group) => (
+        <div
+          key={group.name}
+          className="border rounded-xl p-4 shadow-sm"
+        >
+          <p className="font-semibold">
+            {group.name}
+          </p>
+
+          <p className="text-sm text-gray-500">
+            {group.total}{" "}
+            {group.total === 1
+              ? "dipendente"
+              : "dipendenti"}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
         <div className="border rounded-2xl p-6 shadow-sm space-y-4">
           <h2 className="text-xl font-semibold">Crea dipendente</h2>
