@@ -10,6 +10,7 @@ type Employee = {
   last_name: string;
   email: string;
   status: string;
+  company_name: string | null;
 };
 
 type DocumentItem = {
@@ -63,16 +64,16 @@ export default function AdminPage() {
   const [employeeForm, setEmployeeForm] = useState({
     first_name: "",
     last_name: "",
-    tax_code: "",
+    company_name: "",
     email: "",
-    phone: "",
     password: "",
   });
 
   async function loadData() {
     const { data: employeesData, error: employeesError } = await supabase
       .from("employees")
-      .select("id, first_name, last_name, email, status")
+      .select("id, first_name, last_name, email, status, company_name")
+      .order("company_name", { ascending: true })
       .order("last_name", { ascending: true })
       .order("first_name", { ascending: true });
 
@@ -234,7 +235,9 @@ export default function AdminPage() {
 
     if (!query) return true;
 
-    const fullText = `${employee.last_name} ${employee.first_name} ${employee.email}`.toLowerCase();
+    const fullText = `${employee.last_name} ${employee.first_name} ${employee.email} ${
+      employee.company_name || ""
+    }`.toLowerCase();
 
     return fullText.includes(query);
   });
@@ -372,11 +375,11 @@ export default function AdminPage() {
     e.preventDefault();
     setMessage("");
 
-    const { first_name, last_name, tax_code, email, phone, password } =
+    const { first_name, last_name, company_name, email, password } =
       employeeForm;
 
-    if (!first_name || !last_name || !tax_code || !email || !password) {
-      setMessage("Compila tutti i campi obbligatori del dipendente");
+    if (!first_name || !last_name || !company_name || !email || !password) {
+      setMessage("Compila nome, cognome, appalto/cliente, email e password");
       return;
     }
 
@@ -391,10 +394,11 @@ export default function AdminPage() {
         body: JSON.stringify({
           first_name,
           last_name,
-          tax_code,
+          company_name,
           email,
-          phone,
           password,
+          tax_code: "",
+          phone: "",
         }),
       });
 
@@ -410,9 +414,8 @@ export default function AdminPage() {
       setEmployeeForm({
         first_name: "",
         last_name: "",
-        tax_code: "",
+        company_name: "",
         email: "",
-        phone: "",
         password: "",
       });
 
@@ -734,13 +737,13 @@ export default function AdminPage() {
 
             <input
               type="text"
-              placeholder="Codice fiscale"
+              placeholder="Appalto / Cliente"
               className="border rounded-lg px-4 py-2"
-              value={employeeForm.tax_code}
+              value={employeeForm.company_name}
               onChange={(e) =>
                 setEmployeeForm({
                   ...employeeForm,
-                  tax_code: e.target.value.toUpperCase(),
+                  company_name: e.target.value,
                 })
               }
             />
@@ -759,22 +762,9 @@ export default function AdminPage() {
             />
 
             <input
-              type="text"
-              placeholder="Telefono"
-              className="border rounded-lg px-4 py-2"
-              value={employeeForm.phone}
-              onChange={(e) =>
-                setEmployeeForm({
-                  ...employeeForm,
-                  phone: e.target.value,
-                })
-              }
-            />
-
-            <input
               type="password"
               placeholder="Password iniziale"
-              className="border rounded-lg px-4 py-2"
+              className="border rounded-lg px-4 py-2 md:col-span-2"
               value={employeeForm.password}
               onChange={(e) =>
                 setEmployeeForm({
@@ -809,6 +799,7 @@ export default function AdminPage() {
               <option value="">Seleziona dipendente</option>
               {employees.map((employee) => (
                 <option key={employee.id} value={employee.id}>
+                  {employee.company_name ? `${employee.company_name} - ` : ""}
                   {employee.last_name} {employee.first_name}
                 </option>
               ))}
@@ -871,7 +862,7 @@ export default function AdminPage() {
 
             <input
               type="text"
-              placeholder="Cerca per nome, cognome o email"
+              placeholder="Cerca per nome, cognome, email o appalto"
               className="border rounded-lg px-4 py-2 w-full md:w-80"
               value={employeeSearch}
               onChange={(e) => setEmployeeSearch(e.target.value)}
@@ -886,6 +877,7 @@ export default function AdminPage() {
                 <thead className="sticky top-0 bg-white">
                   <tr className="border-b text-left">
                     <th className="py-2 px-3">Dipendente</th>
+                    <th className="py-2 px-3">Appalto / Cliente</th>
                     <th className="py-2 px-3">Email</th>
                     <th className="py-2 px-3">Stato</th>
                     <th className="py-2 px-3">Azioni</th>
@@ -901,6 +893,9 @@ export default function AdminPage() {
                         >
                           {employee.last_name} {employee.first_name}
                         </a>
+                      </td>
+                      <td className="py-2 px-3">
+                        {employee.company_name || "-"}
                       </td>
                       <td className="py-2 px-3">{employee.email}</td>
                       <td className="py-2 px-3">

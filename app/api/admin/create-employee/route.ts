@@ -4,9 +4,18 @@ import { createClient } from "@supabase/supabase-js";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { first_name, last_name, tax_code, email, phone, password } = body;
 
-    if (!first_name || !last_name || !tax_code || !email || !password) {
+    const {
+      first_name,
+      last_name,
+      company_name,
+      tax_code,
+      email,
+      phone,
+      password,
+    } = body;
+
+    if (!first_name || !last_name || !company_name || !email || !password) {
       return NextResponse.json(
         { error: "Campi obbligatori mancanti" },
         { status: 400 }
@@ -23,9 +32,10 @@ export async function POST(req: Request) {
       .insert({
         first_name,
         last_name,
-        tax_code,
+        company_name,
+        tax_code: tax_code || null,
         email,
-        phone,
+        phone: phone || null,
         status: "active",
       })
       .select()
