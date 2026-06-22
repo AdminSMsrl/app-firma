@@ -738,22 +738,23 @@ const companyGroups: CompanyGroup[] = Object.values(
   ) : (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {companyGroups.map((group) => (
-        <div
-          key={group.name}
-          className="border rounded-xl p-4 shadow-sm"
-        >
-          <p className="font-semibold">
-            {group.name}
-          </p>
+  <a
+    key={group.name}
+    href={`/admin/companies/${encodeURIComponent(group.name)}`}
+    className="border rounded-xl p-4 shadow-sm block hover:bg-gray-50 transition"
+  >
+    <p className="font-semibold">
+      {group.name}
+    </p>
 
-          <p className="text-sm text-gray-500">
-            {group.total}{" "}
-            {group.total === 1
-              ? "dipendente"
-              : "dipendenti"}
-          </p>
-        </div>
-      ))}
+    <p className="text-sm text-gray-500">
+      {group.total}{" "}
+      {group.total === 1
+        ? "dipendente"
+        : "dipendenti"}
+    </p>
+  </a>
+))}
     </div>
   )}
 </div>
