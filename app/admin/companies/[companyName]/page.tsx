@@ -324,7 +324,7 @@ export default function CompanyPage({
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold">{companyName}</h1>
-            <p className="text-gray-600">Dashboard appalto / cliente</p>
+            <p className="text-gray-600">Dashboard appalto / cliente aggiornata</p>
           </div>
 
           <a href="/admin" className="border rounded-lg px-4 py-2">
