@@ -7,10 +7,10 @@ type EmployeeType = {
   id: string;
   first_name: string;
   last_name: string;
-  tax_code: string;
   email: string;
   phone: string | null;
   status: string;
+  company_name: string | null;
 };
 
 type DocumentType = {
@@ -43,7 +43,7 @@ export default function EmployeeDetailPage({
 
       const { data: employeeData, error: employeeError } = await supabase
         .from("employees")
-        .select("*")
+        .select("id, first_name, last_name, email, phone, status, company_name")
         .eq("id", resolvedParams.id)
         .single();
 
@@ -87,9 +87,9 @@ export default function EmployeeDetailPage({
         data: {
           first_name: employee.first_name,
           last_name: employee.last_name,
-          tax_code: employee.tax_code,
           email: employee.email,
           phone: employee.phone,
+          company_name: employee.company_name,
         },
       }),
     });
@@ -204,19 +204,6 @@ export default function EmployeeDetailPage({
             />
 
             <input
-              type="text"
-              value={employee.tax_code}
-              onChange={(e) =>
-                setEmployee({
-                  ...employee,
-                  tax_code: e.target.value.toUpperCase(),
-                })
-              }
-              className="border rounded-lg px-4 py-2"
-              placeholder="Codice fiscale"
-            />
-
-            <input
               type="email"
               value={employee.email}
               onChange={(e) =>
@@ -228,20 +215,20 @@ export default function EmployeeDetailPage({
 
             <input
               type="text"
-              value={employee.phone || ""}
-              onChange={(e) =>
-                setEmployee({ ...employee, phone: e.target.value })
-              }
-              className="border rounded-lg px-4 py-2"
-              placeholder="Telefono"
-            />
-
-            <input
-              type="text"
               value={employee.status}
               disabled
               className="border rounded-lg px-4 py-2 bg-gray-100"
               placeholder="Stato"
+            />
+
+            <input
+              type="text"
+              value={employee.company_name || ""}
+              onChange={(e) =>
+                setEmployee({ ...employee, company_name: e.target.value })
+              }
+              className="border rounded-lg px-4 py-2 md:col-span-2"
+              placeholder="Appalto / Cliente"
             />
           </div>
 
@@ -265,7 +252,7 @@ export default function EmployeeDetailPage({
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Buste paga caricate</h2>
+          <h2 className="text-xl font-semibold mb-4">Documenti caricati</h2>
 
           {documents.length === 0 ? (
             <p>Nessun documento caricato per questo dipendente.</p>
@@ -278,18 +265,18 @@ export default function EmployeeDetailPage({
                 >
                   <div>
                     <p className="font-semibold">
-                      Busta paga {doc.month}/{doc.year}
+                      Documento {doc.month}/{doc.year}
                     </p>
                     <p className="text-sm text-gray-600">
                       Stato: {doc.status}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Caricata il:{" "}
+                      Caricato il:{" "}
                       {new Date(doc.uploaded_at).toLocaleString("it-IT")}
                     </p>
                     {doc.signed_at && (
                       <p className="text-sm text-gray-600">
-                        Firmata il:{" "}
+                        Firmato il:{" "}
                         {new Date(doc.signed_at).toLocaleString("it-IT")}
                       </p>
                     )}

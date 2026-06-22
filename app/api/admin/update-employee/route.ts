@@ -25,10 +25,7 @@ export async function POST(req: Request) {
         .eq("id", id);
 
       if (error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 400 });
       }
 
       return NextResponse.json({ success: true });
@@ -47,26 +44,20 @@ export async function POST(req: Request) {
         .update({
           first_name: data.first_name,
           last_name: data.last_name,
-          tax_code: data.tax_code,
           email: data.email,
-          phone: data.phone,
+          phone: data.phone || null,
+          company_name: data.company_name || null,
         })
         .eq("id", id);
 
       if (error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 400 });
       }
 
       return NextResponse.json({ success: true });
     }
 
-    return NextResponse.json(
-      { error: "Azione non valida" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Azione non valida" }, { status: 400 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
