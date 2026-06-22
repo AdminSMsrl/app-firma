@@ -23,6 +23,7 @@ type DocumentType = {
   uploaded_at: string;
   viewed_at: string | null;
   signed_at: string | null;
+  document_type?: string | null;
 };
 
 export default function EmployeeDetailPage({
@@ -35,6 +36,7 @@ export default function EmployeeDetailPage({
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [employeeId, setEmployeeId] = useState("");
+  const [deletingEmployee, setDeletingEmployee] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -70,6 +72,58 @@ export default function EmployeeDetailPage({
 
     loadData();
   }, [params]);
+
+  const getCompanyUrl = () => {
+    if (!employee?.company_name) return "/admin";
+
+    return `/admin/companies/${encodeURIComponent(employee.company_name)}`;
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === "active") return "Attivo";
+    if (status === "suspended") return "Sospeso";
+    return status;
+  };
+
+  const getStatusClass = (status: string) => {
+    if (status === "active") {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+
+    if (status === "suspended") {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+
+    return "bg-gray-100 text-gray-700 border-gray-200";
+  };
+
+  const getDocumentStatusLabel = (status: string) => {
+    if (status === "signed") return "Firmato";
+    if (status === "viewed") return "Visualizzato";
+    if (status === "available") return "Da firmare";
+    return status;
+  };
+
+  const getDocumentStatusClass = (status: string) => {
+    if (status === "signed") {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+
+    if (status === "viewed") {
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    }
+
+    if (status === "available") {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+
+    return "bg-gray-100 text-gray-700 border-gray-200";
+  };
+
+  const getDocumentTypeLabel = (type?: string | null) => {
+    if (type === "tax_bonus_form") return "Modulo imposta sostitutiva";
+    return "Busta paga";
+  };
 
   const handleUpdate = async () => {
     if (!employee) return;
@@ -107,6 +161,12 @@ export default function EmployeeDetailPage({
   const handleSuspend = async () => {
     if (!employee) return;
 
+    const confirmed = window.confirm(
+      "Vuoi sospendere questo dipendente?"
+    );
+
+    if (!confirmed) return;
+
     setMessage("");
 
     const response = await fetch("/api/admin/update-employee", {
@@ -129,6 +189,52 @@ export default function EmployeeDetailPage({
 
     setEmployee({ ...employee, status: "suspended" });
     setMessage("Dipendente sospeso correttamente");
+  };
+
+  const handleDeleteEmployee = async () => {
+    if (!employee) return;
+
+    const confirmed = window.confirm(
+      "ATTENZIONE: stai per eliminare definitivamente il dipendente.\n\n" +
+        "Verranno eliminati:\n" +
+        "- accesso login\n" +
+        "- firme salvate\n" +
+        "- documenti caricati\n" +
+        "- PDF firmati\n\n" +
+        "Questa operazione NON è reversibile.\n\n" +
+        "Vuoi continuare?"
+    );
+
+    if (!confirmed) return;
+
+    setMessage("");
+    setDeletingEmployee(true);
+
+    try {
+      const response = await fetch("/api/admin/delete-employee", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          employeeId: employee.id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error || "Errore eliminazione dipendente");
+        setDeletingEmployee(false);
+        return;
+      }
+
+      window.location.href = getCompanyUrl();
+    } catch (error) {
+      console.error(error);
+      setMessage("Errore imprevisto durante l'eliminazione del dipendente");
+      setDeletingEmployee(false);
+    }
   };
 
   const handleDownload = async (fileUrl: string, bucket: string) => {
@@ -166,7 +272,7 @@ export default function EmployeeDetailPage({
   return (
     <main className="min-h-screen bg-white text-black p-8">
       <section className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold">
               {employee.first_name} {employee.last_name}
@@ -174,9 +280,20 @@ export default function EmployeeDetailPage({
             <p className="text-gray-600">ID dipendente: {employeeId}</p>
           </div>
 
-          <a href="/admin" className="border rounded-lg px-4 py-2">
-            Torna alla dashboard
-          </a>
+          <div className="flex gap-2 flex-wrap">
+            {employee.company_name && (
+              <a
+                href={getCompanyUrl()}
+                className="border rounded-lg px-4 py-2"
+              >
+                ← Torna all'appalto
+              </a>
+            )}
+
+            <a href="/admin" className="border rounded-lg px-4 py-2">
+              Dashboard
+            </a>
+          </div>
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm space-y-4">
@@ -213,13 +330,15 @@ export default function EmployeeDetailPage({
               placeholder="Email"
             />
 
-            <input
-              type="text"
-              value={employee.status}
-              disabled
-              className="border rounded-lg px-4 py-2 bg-gray-100"
-              placeholder="Stato"
-            />
+            <div className="border rounded-lg px-4 py-2 bg-gray-100 flex items-center">
+              <span
+                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClass(
+                  employee.status
+                )}`}
+              >
+                {getStatusLabel(employee.status)}
+              </span>
+            </div>
 
             <input
               type="text"
@@ -246,9 +365,19 @@ export default function EmployeeDetailPage({
             >
               Sospendi dipendente
             </button>
+
+            <button
+              onClick={handleDeleteEmployee}
+              disabled={deletingEmployee}
+              className="bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-700 disabled:opacity-50"
+            >
+              {deletingEmployee
+                ? "Eliminazione..."
+                : "Elimina definitivamente"}
+            </button>
           </div>
 
-          {message && <p className="text-sm">{message}</p>}
+          {message && <p className="text-sm text-red-600">{message}</p>}
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm">
@@ -263,17 +392,25 @@ export default function EmployeeDetailPage({
                   key={doc.id}
                   className="border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
                 >
-                  <div>
+                  <div className="space-y-1">
                     <p className="font-semibold">
-                      Documento {doc.month}/{doc.year}
+                      {getDocumentTypeLabel(doc.document_type)} {doc.month}/
+                      {doc.year}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      Stato: {doc.status}
-                    </p>
+
+                    <span
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getDocumentStatusClass(
+                        doc.status
+                      )}`}
+                    >
+                      {getDocumentStatusLabel(doc.status)}
+                    </span>
+
                     <p className="text-sm text-gray-600">
                       Caricato il:{" "}
                       {new Date(doc.uploaded_at).toLocaleString("it-IT")}
                     </p>
+
                     {doc.signed_at && (
                       <p className="text-sm text-gray-600">
                         Firmato il:{" "}
@@ -285,7 +422,10 @@ export default function EmployeeDetailPage({
                   <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={() =>
-                        handleDownload(doc.original_file_url, "original-documents")
+                        handleDownload(
+                          doc.original_file_url,
+                          "original-documents"
+                        )
                       }
                       className="px-3 py-2 rounded-lg border"
                     >
@@ -295,7 +435,10 @@ export default function EmployeeDetailPage({
                     {doc.signed_file_url && (
                       <button
                         onClick={() =>
-                          handleDownload(doc.signed_file_url!, "signed-documents")
+                          handleDownload(
+                            doc.signed_file_url!,
+                            "signed-documents"
+                          )
                         }
                         className="px-3 py-2 rounded-lg border"
                       >

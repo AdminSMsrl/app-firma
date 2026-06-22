@@ -50,6 +50,9 @@ export default function CompanyPage({
   const [message, setMessage] = useState("");
   const [downloadingZip, setDownloadingZip] = useState("");
 
+  const [employeeSearch, setEmployeeSearch] = useState("");
+  const [documentSearch, setDocumentSearch] = useState("");
+
   useEffect(() => {
     async function loadData() {
       const resolvedParams = await params;
@@ -147,9 +150,36 @@ export default function CompanyPage({
   };
 
   const getDocumentStatusClass = (status: string) => {
-    if (status === "signed") return "bg-green-100 text-green-700 border-green-200";
-    if (status === "viewed") return "bg-yellow-100 text-yellow-700 border-yellow-200";
-    if (status === "available") return "bg-red-100 text-red-700 border-red-200";
+    if (status === "signed") {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+
+    if (status === "viewed") {
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    }
+
+    if (status === "available") {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+
+    return "bg-gray-100 text-gray-700 border-gray-200";
+  };
+
+  const getEmployeeStatusLabel = (status: string) => {
+    if (status === "active") return "Attivo";
+    if (status === "suspended") return "Sospeso";
+    return status;
+  };
+
+  const getEmployeeStatusClass = (status: string) => {
+    if (status === "active") {
+      return "bg-green-100 text-green-700 border-green-200";
+    }
+
+    if (status === "suspended") {
+      return "bg-red-100 text-red-700 border-red-200";
+    }
+
     return "bg-gray-100 text-gray-700 border-gray-200";
   };
 
@@ -160,6 +190,31 @@ export default function CompanyPage({
     },
     {}
   );
+
+  const pendingDocuments = documents.filter((doc) => doc.status !== "signed");
+
+  const filteredEmployees = employees.filter((employee) => {
+    const query = employeeSearch.toLowerCase().trim();
+
+    if (!query) return true;
+
+    const fullText = `${employee.last_name} ${employee.first_name} ${employee.email} ${employee.status}`.toLowerCase();
+
+    return fullText.includes(query);
+  });
+
+  const filteredDocuments = documents.filter((doc) => {
+    const query = documentSearch.toLowerCase().trim();
+    const employee = employeesById[doc.employee_id];
+
+    const fullText = `${employee?.last_name || ""} ${
+      employee?.first_name || ""
+    } ${employee?.email || ""} ${getDocumentTypeLabel(doc.document_type)} ${
+      doc.month
+    }/${doc.year} ${getDocumentStatusLabel(doc.status)}`.toLowerCase();
+
+    return !query || fullText.includes(query);
+  });
 
   const documentGroups: DocumentGroup[] = Object.values(
     documents.reduce<Record<string, DocumentGroup>>((acc, doc) => {
@@ -403,11 +458,56 @@ export default function CompanyPage({
 
           <div className="border rounded-2xl p-4 shadow-sm">
             <p className="text-sm text-gray-500">Da firmare</p>
-            <p className="text-2xl font-bold">
-              {documents.filter((doc) => doc.status !== "signed").length}
-            </p>
+            <p className="text-2xl font-bold">{pendingDocuments.length}</p>
           </div>
         </div>
+
+        {pendingDocuments.length > 0 && (
+          <div className="border rounded-2xl p-6 shadow-sm bg-red-50 border-red-200">
+            <h2 className="text-xl font-semibold mb-4 text-red-700">
+              Documenti da firmare
+            </h2>
+
+            <div className="space-y-2">
+              {pendingDocuments.slice(0, 8).map((doc) => {
+                const employee = employeesById[doc.employee_id];
+
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between gap-4 border rounded-xl p-3 bg-white"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {employee
+                          ? `${employee.last_name} ${employee.first_name}`
+                          : "Dipendente"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {getDocumentTypeLabel(doc.document_type)} {doc.month}/
+                        {doc.year} · {getDocumentStatusLabel(doc.status)}
+                      </p>
+                    </div>
+
+                    <a
+                      href={`/admin/employees/${doc.employee_id}`}
+                      className="border rounded-lg px-3 py-1 text-sm"
+                    >
+                      Apri
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+
+            {pendingDocuments.length > 8 && (
+              <p className="text-sm text-red-700 mt-3">
+                Altri {pendingDocuments.length - 8} documenti richiedono
+                attenzione.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="border rounded-2xl p-6 shadow-sm">
           <h2 className="text-xl font-semibold mb-4">
@@ -475,10 +575,25 @@ export default function CompanyPage({
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Dipendenti</h2>
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Dipendenti</h2>
+              <p className="text-sm text-gray-500">
+                Visualizzati {filteredEmployees.length} su {employees.length}
+              </p>
+            </div>
 
-          {employees.length === 0 ? (
-            <p>Nessun dipendente presente per questo appalto.</p>
+            <input
+              type="text"
+              placeholder="Cerca dipendente"
+              className="border rounded-lg px-4 py-2 w-full md:w-80"
+              value={employeeSearch}
+              onChange={(e) => setEmployeeSearch(e.target.value)}
+            />
+          </div>
+
+          {filteredEmployees.length === 0 ? (
+            <p>Nessun dipendente trovato per questo appalto.</p>
           ) : (
             <div className="overflow-auto max-h-[360px] border rounded-xl">
               <table className="w-full text-sm border-collapse">
@@ -491,7 +606,7 @@ export default function CompanyPage({
                 </thead>
 
                 <tbody>
-                  {employees.map((employee) => (
+                  {filteredEmployees.map((employee) => (
                     <tr key={employee.id} className="border-b">
                       <td className="py-2 px-3">
                         <a
@@ -504,7 +619,15 @@ export default function CompanyPage({
 
                       <td className="py-2 px-3">{employee.email}</td>
 
-                      <td className="py-2 px-3">{employee.status}</td>
+                      <td className="py-2 px-3">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(
+                            employee.status
+                          )}`}
+                        >
+                          {getEmployeeStatusLabel(employee.status)}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -514,10 +637,25 @@ export default function CompanyPage({
         </div>
 
         <div className="border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">Documenti</h2>
+          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Documenti</h2>
+              <p className="text-sm text-gray-500">
+                Visualizzati {filteredDocuments.length} su {documents.length}
+              </p>
+            </div>
 
-          {documents.length === 0 ? (
-            <p>Nessun documento presente per questo appalto.</p>
+            <input
+              type="text"
+              placeholder="Cerca documento o dipendente"
+              className="border rounded-lg px-4 py-2 w-full md:w-80"
+              value={documentSearch}
+              onChange={(e) => setDocumentSearch(e.target.value)}
+            />
+          </div>
+
+          {filteredDocuments.length === 0 ? (
+            <p>Nessun documento trovato per questo appalto.</p>
           ) : (
             <div className="overflow-auto max-h-[520px] border rounded-xl">
               <table className="w-full text-sm border-collapse">
@@ -532,7 +670,7 @@ export default function CompanyPage({
                 </thead>
 
                 <tbody>
-                  {documents.map((doc) => {
+                  {filteredDocuments.map((doc) => {
                     const employee = employeesById[doc.employee_id];
 
                     return (
