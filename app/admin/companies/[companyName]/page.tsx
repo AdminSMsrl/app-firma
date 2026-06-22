@@ -496,7 +496,6 @@ export default function CompanyPage({
                 <thead className="sticky top-0 bg-white">
                   <tr className="border-b text-left">
                     <th className="py-2 px-3">Dipendente</th>
-                    <th className="py-2 px-3">Email</th>
                     <th className="py-2 px-3">Stato</th>
                   </tr>
                 </thead>
@@ -512,8 +511,6 @@ export default function CompanyPage({
                           {employee.last_name} {employee.first_name}
                         </a>
                       </td>
-
-                      <td className="py-2 px-3">{employee.email}</td>
 
                       <td className="py-2 px-3">
                         <span
