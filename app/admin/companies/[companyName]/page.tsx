@@ -51,7 +51,6 @@ export default function CompanyPage({
   const [downloadingZip, setDownloadingZip] = useState("");
 
   const [employeeSearch, setEmployeeSearch] = useState("");
-  const [documentSearch, setDocumentSearch] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -149,22 +148,6 @@ export default function CompanyPage({
     return status;
   };
 
-  const getDocumentStatusClass = (status: string) => {
-    if (status === "signed") {
-      return "bg-green-100 text-green-700 border-green-200";
-    }
-
-    if (status === "viewed") {
-      return "bg-yellow-100 text-yellow-700 border-yellow-200";
-    }
-
-    if (status === "available") {
-      return "bg-red-100 text-red-700 border-red-200";
-    }
-
-    return "bg-gray-100 text-gray-700 border-gray-200";
-  };
-
   const getEmployeeStatusLabel = (status: string) => {
     if (status === "active") return "Attivo";
     if (status === "suspended") return "Sospeso";
@@ -201,19 +184,6 @@ export default function CompanyPage({
     const fullText = `${employee.last_name} ${employee.first_name} ${employee.email} ${employee.status}`.toLowerCase();
 
     return fullText.includes(query);
-  });
-
-  const filteredDocuments = documents.filter((doc) => {
-    const query = documentSearch.toLowerCase().trim();
-    const employee = employeesById[doc.employee_id];
-
-    const fullText = `${employee?.last_name || ""} ${
-      employee?.first_name || ""
-    } ${employee?.email || ""} ${getDocumentTypeLabel(doc.document_type)} ${
-      doc.month
-    }/${doc.year} ${getDocumentStatusLabel(doc.status)}`.toLowerCase();
-
-    return !query || fullText.includes(query);
   });
 
   const documentGroups: DocumentGroup[] = Object.values(
@@ -260,80 +230,6 @@ export default function CompanyPage({
     const paddedMonth = String(doc.month).padStart(2, "0");
 
     return `${employeeName} - ${documentLabel} - ${paddedMonth}-${doc.year}.pdf`;
-  };
-
-  const downloadFileFromSignedUrl = async (
-    signedUrl: string,
-    fileName: string
-  ) => {
-    const response = await fetch(signedUrl);
-
-    if (!response.ok) {
-      throw new Error("Errore durante il download del file");
-    }
-
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-
-    link.remove();
-    URL.revokeObjectURL(objectUrl);
-  };
-
-  const handleDownloadOriginal = async (doc: DocumentItem) => {
-    setMessage("");
-
-    const filePath = doc.original_file_url.replace("original-documents/", "");
-
-    const { data, error } = await supabase.storage
-      .from("original-documents")
-      .createSignedUrl(filePath, 3600);
-
-    if (error || !data?.signedUrl) {
-      console.error(error);
-      setMessage("Errore nel download del PDF originale");
-      return;
-    }
-
-    try {
-      await downloadFileFromSignedUrl(data.signedUrl, buildDownloadFileName(doc));
-    } catch (error) {
-      console.error(error);
-      setMessage("Errore nel download del PDF originale");
-    }
-  };
-
-  const handleDownloadSigned = async (doc: DocumentItem) => {
-    if (!doc.signed_file_url) {
-      setMessage("PDF firmato non disponibile");
-      return;
-    }
-
-    setMessage("");
-
-    const filePath = doc.signed_file_url.replace("signed-documents/", "");
-
-    const { data, error } = await supabase.storage
-      .from("signed-documents")
-      .createSignedUrl(filePath, 3600);
-
-    if (error || !data?.signedUrl) {
-      console.error(error);
-      setMessage("Errore nel download del PDF firmato");
-      return;
-    }
-
-    try {
-      await downloadFileFromSignedUrl(data.signedUrl, buildDownloadFileName(doc));
-    } catch (error) {
-      console.error(error);
-      setMessage("Errore nel download del PDF firmato");
-    }
   };
 
   const handleDownloadSignedZip = async (
@@ -630,95 +526,6 @@ export default function CompanyPage({
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <div className="border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-            <div>
-              <h2 className="text-xl font-semibold">Documenti</h2>
-              <p className="text-sm text-gray-500">
-                Visualizzati {filteredDocuments.length} su {documents.length}
-              </p>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Cerca documento o dipendente"
-              className="border rounded-lg px-4 py-2 w-full md:w-80"
-              value={documentSearch}
-              onChange={(e) => setDocumentSearch(e.target.value)}
-            />
-          </div>
-
-          {filteredDocuments.length === 0 ? (
-            <p>Nessun documento trovato per questo appalto.</p>
-          ) : (
-            <div className="overflow-auto max-h-[520px] border rounded-xl">
-              <table className="w-full text-sm border-collapse">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="border-b text-left">
-                    <th className="py-2 px-3">Dipendente</th>
-                    <th className="py-2 px-3">Tipo</th>
-                    <th className="py-2 px-3">Periodo</th>
-                    <th className="py-2 px-3">Stato</th>
-                    <th className="py-2 px-3">Azioni</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredDocuments.map((doc) => {
-                    const employee = employeesById[doc.employee_id];
-
-                    return (
-                      <tr key={doc.id} className="border-b">
-                        <td className="py-2 px-3">
-                          {employee
-                            ? `${employee.last_name} ${employee.first_name}`
-                            : "Dipendente"}
-                        </td>
-
-                        <td className="py-2 px-3">
-                          {getDocumentTypeLabel(doc.document_type)}
-                        </td>
-
-                        <td className="py-2 px-3">
-                          {doc.month}/{doc.year}
-                        </td>
-
-                        <td className="py-2 px-3">
-                          <span
-                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getDocumentStatusClass(
-                              doc.status
-                            )}`}
-                          >
-                            {getDocumentStatusLabel(doc.status)}
-                          </span>
-                        </td>
-
-                        <td className="py-2 px-3">
-                          <div className="flex gap-2 flex-wrap">
-                            <button
-                              onClick={() => handleDownloadOriginal(doc)}
-                              className="px-3 py-1 rounded-lg border"
-                            >
-                              PDF originale
-                            </button>
-
-                            <button
-                              onClick={() => handleDownloadSigned(doc)}
-                              className="px-3 py-1 rounded-lg border"
-                            >
-                              PDF firmato
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
                 </tbody>
               </table>
             </div>
