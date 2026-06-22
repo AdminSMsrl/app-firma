@@ -235,9 +235,9 @@ export default function AdminPage() {
 
     if (!query) return true;
 
-    const fullText = `${employee.last_name} ${employee.first_name} ${employee.email} ${
-      employee.company_name || ""
-    }`.toLowerCase();
+    const fullText = `${employee.last_name} ${employee.first_name} ${
+      employee.email
+    } ${employee.company_name || ""}`.toLowerCase();
 
     return fullText.includes(query);
   });
@@ -245,9 +245,11 @@ export default function AdminPage() {
   const filteredDocuments = documents.filter((doc) => {
     const query = documentSearch.toLowerCase().trim();
 
-    const fullText = `${doc.last_name} ${doc.first_name} ${doc.email} ${getDocumentTypeLabel(
-      doc.document_type
-    )} ${doc.month}/${doc.year}`.toLowerCase();
+    const fullText = `${doc.last_name} ${doc.first_name} ${
+      doc.email
+    } ${getDocumentTypeLabel(doc.document_type)} ${
+      doc.month
+    }/${doc.year}`.toLowerCase();
 
     const matchesSearch = !query || fullText.includes(query);
     const matchesPeriod =
@@ -690,10 +692,12 @@ export default function AdminPage() {
             <p className="text-sm text-gray-500">Dipendenti</p>
             <p className="text-2xl font-bold">{employees.length}</p>
           </div>
+
           <div className="border rounded-2xl p-4 shadow-sm">
             <p className="text-sm text-gray-500">Documenti</p>
             <p className="text-2xl font-bold">{documents.length}</p>
           </div>
+
           <div className="border rounded-2xl p-4 shadow-sm">
             <p className="text-sm text-gray-500">Documenti firmati</p>
             <p className="text-2xl font-bold">
@@ -736,19 +740,6 @@ export default function AdminPage() {
             />
 
             <input
-              type="text"
-              placeholder="Appalto / Cliente"
-              className="border rounded-lg px-4 py-2"
-              value={employeeForm.company_name}
-              onChange={(e) =>
-                setEmployeeForm({
-                  ...employeeForm,
-                  company_name: e.target.value,
-                })
-              }
-            />
-
-            <input
               type="email"
               placeholder="Email"
               className="border rounded-lg px-4 py-2"
@@ -764,12 +755,25 @@ export default function AdminPage() {
             <input
               type="password"
               placeholder="Password iniziale"
-              className="border rounded-lg px-4 py-2 md:col-span-2"
+              className="border rounded-lg px-4 py-2"
               value={employeeForm.password}
               onChange={(e) =>
                 setEmployeeForm({
                   ...employeeForm,
                   password: e.target.value,
+                })
+              }
+            />
+
+            <input
+              type="text"
+              placeholder="Appalto / Cliente"
+              className="border rounded-lg px-4 py-2 md:col-span-2"
+              value={employeeForm.company_name}
+              onChange={(e) =>
+                setEmployeeForm({
+                  ...employeeForm,
+                  company_name: e.target.value,
                 })
               }
             />
@@ -883,6 +887,7 @@ export default function AdminPage() {
                     <th className="py-2 px-3">Azioni</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filteredEmployees.map((employee) => (
                     <tr key={employee.id} className="border-b">
@@ -894,10 +899,13 @@ export default function AdminPage() {
                           {employee.last_name} {employee.first_name}
                         </a>
                       </td>
+
                       <td className="py-2 px-3">
                         {employee.company_name || "-"}
                       </td>
+
                       <td className="py-2 px-3">{employee.email}</td>
+
                       <td className="py-2 px-3">
                         <span
                           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(
@@ -907,6 +915,7 @@ export default function AdminPage() {
                           {getEmployeeStatusLabel(employee.status)}
                         </span>
                       </td>
+
                       <td className="py-2 px-3">
                         <div className="flex gap-2 flex-wrap">
                           <button
@@ -950,9 +959,11 @@ export default function AdminPage() {
                     <p className="text-lg font-semibold">
                       {getMonthName(group.month)} {group.year}
                     </p>
+
                     <p className="text-sm text-gray-700 font-medium">
                       {getDocumentCategoryLabel(group.category)}
                     </p>
+
                     <p className="text-sm text-gray-500">
                       {group.total} documenti totali
                     </p>
@@ -1045,7 +1056,9 @@ export default function AdminPage() {
             >
               <option value="all">Tutti i tipi</option>
               <option value="payslip">Buste paga</option>
-              <option value="tax_bonus_form">Modulo imposta sostitutiva</option>
+              <option value="tax_bonus_form">
+                Modulo imposta sostitutiva
+              </option>
             </select>
           </div>
 
@@ -1063,18 +1076,22 @@ export default function AdminPage() {
                     <th className="py-2 px-3">Azioni</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filteredDocuments.map((doc) => (
                     <tr key={doc.document_id} className="border-b">
                       <td className="py-2 px-3">
                         {doc.last_name} {doc.first_name}
                       </td>
+
                       <td className="py-2 px-3">
                         {getDocumentTypeLabel(doc.document_type)}
                       </td>
+
                       <td className="py-2 px-3">
                         {doc.month}/{doc.year}
                       </td>
+
                       <td className="py-2 px-3">
                         <span
                           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getDocumentStatusClass(
@@ -1084,6 +1101,7 @@ export default function AdminPage() {
                           {getDocumentStatusLabel(doc.status)}
                         </span>
                       </td>
+
                       <td className="py-2 px-3">
                         <div className="flex gap-2 flex-wrap">
                           <button
