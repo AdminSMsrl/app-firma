@@ -37,6 +37,7 @@ export default function EmployeeDetailPage({
   const [loading, setLoading] = useState(true);
   const [employeeId, setEmployeeId] = useState("");
   const [deletingEmployee, setDeletingEmployee] = useState(false);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -253,6 +254,49 @@ export default function EmployeeDetailPage({
     window.open(data.signedUrl, "_blank");
   };
 
+  const handleDeleteDocument = async (documentId: string) => {
+    const confirmed = window.confirm(
+      "Sei sicuro di voler eliminare definitivamente questo documento?\n\n" +
+        "Verranno eliminati anche l'eventuale PDF firmato e i dati collegati alla firma.\n\n" +
+        "Questa operazione NON può essere annullata."
+    );
+
+    if (!confirmed) return;
+
+    setMessage("");
+    setDeletingDocumentId(documentId);
+
+    try {
+      const response = await fetch("/api/admin/delete-document", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          documentId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error || "Errore eliminazione documento");
+        return;
+      }
+
+      setDocuments((currentDocuments) =>
+        currentDocuments.filter((doc) => doc.id !== documentId)
+      );
+
+      setMessage("Documento eliminato correttamente");
+    } catch (error) {
+      console.error(error);
+      setMessage("Errore imprevisto durante l'eliminazione del documento");
+    } finally {
+      setDeletingDocumentId(null);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center">
@@ -390,7 +434,7 @@ export default function EmployeeDetailPage({
               {documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                  className="border rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 hover:bg-gray-50 transition"
                 >
                   <div className="space-y-1">
                     <p className="font-semibold">
@@ -440,11 +484,21 @@ export default function EmployeeDetailPage({
                             "signed-documents"
                           )
                         }
-                        className="px-3 py-2 rounded-lg border"
+                        className="px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
                       >
                         PDF firmato
                       </button>
                     )}
+
+                    <button
+                      onClick={() => handleDeleteDocument(doc.id)}
+                      disabled={deletingDocumentId === doc.id}
+                      className="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {deletingDocumentId === doc.id
+                        ? "Eliminazione..."
+                        : "Elimina"}
+                    </button>
                   </div>
                 </div>
               ))}
