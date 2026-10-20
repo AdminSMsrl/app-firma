@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -296,19 +296,19 @@ export default function AdminPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Dipendenti</p>
+            <p className="text-sm text-gray-500">Dipendenti totali</p>
             <p className="text-2xl font-bold">{employees.length}</p>
           </div>
 
           <div className="border rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Documenti</p>
-            <p className="text-2xl font-bold">{documents.length}</p>
+            <p className="text-sm text-gray-500">Dipendenti attivi</p>
+            <p className="text-2xl font-bold">{employees.filter((employee) => employee.status === "active").length}</p>
           </div>
 
           <div className="border rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Documenti firmati</p>
+            <p className="text-sm text-gray-500">Dipendenti sospesi</p>
             <p className="text-2xl font-bold">
-              {documents.filter((doc) => doc.status === "signed").length}
+              {employees.filter((employee) => employee.status === "suspended").length}
             </p>
           </div>
         </div>
@@ -505,3 +505,4 @@ export default function AdminPage() {
     </main>
   );
 }
+
