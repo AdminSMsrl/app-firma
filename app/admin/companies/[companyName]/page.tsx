@@ -468,7 +468,7 @@ export default function CompanyPage({
             className="w-full flex items-center justify-between p-5 text-left"
           >
             <span className="text-xl font-semibold">
-              Riepilogo documenti per periodo
+              Riepilogo documenti
             </span>
             <span className="text-lg">
               {showDocumentSummary ? "▲" : "▼"}
@@ -584,6 +584,7 @@ export default function CompanyPage({
     </main>
   );
 }
+
 
 
 
