@@ -52,6 +52,7 @@ export default function CompanyPage({
 
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [showAllPending, setShowAllPending] = useState(false);
+  const [showEmployees, setShowEmployees] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -187,6 +188,9 @@ export default function CompanyPage({
 
     return fullText.includes(query);
   });
+
+  const activeEmployees = filteredEmployees.filter((employee) => employee.status === "active");
+  const suspendedEmployees = filteredEmployees.filter((employee) => employee.status === "suspended");
 
   const documentGroups: DocumentGroup[] = Object.values(
     documents.reduce<Record<string, DocumentGroup>>((acc, doc) => {
@@ -471,62 +475,73 @@ export default function CompanyPage({
             </div>
           )}
         </div>
+        <div className="border rounded-2xl shadow-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowEmployees(!showEmployees)}
+            className="w-full flex items-center justify-between p-5 text-left"
+          >
+            <span className="text-xl font-semibold">Dipendenti ({employees.length})</span>
+            <span className="text-lg">{showEmployees ? "▲" : "▼"}</span>
+          </button>
 
-        <div className="border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-            <div>
-              <h2 className="text-xl font-semibold">Dipendenti</h2>
-              <p className="text-sm text-gray-500">
-                Visualizzati {filteredEmployees.length} su {employees.length}
-              </p>
-            </div>
+          {showEmployees && (
+            <div className="px-5 pb-5 space-y-5">
+              <input
+                type="text"
+                placeholder="Cerca dipendente"
+                className="border rounded-lg px-4 py-2 w-full"
+                value={employeeSearch}
+                onChange={(e) => setEmployeeSearch(e.target.value)}
+              />
 
-            <input
-              type="text"
-              placeholder="Cerca dipendente"
-              className="border rounded-lg px-4 py-2 w-full md:w-80"
-              value={employeeSearch}
-              onChange={(e) => setEmployeeSearch(e.target.value)}
-            />
-          </div>
+              <div>
+                <h3 className="font-semibold mb-2">Attivi ({activeEmployees.length})</h3>
+                <div className="overflow-y-auto max-h-[260px] border rounded-xl">
+                  <table className="w-full text-sm border-collapse">
+                    <tbody>
+                      {activeEmployees.map((employee) => (
+                        <tr key={employee.id} className="border-b last:border-b-0">
+                          <td className="py-2 px-3">
+                            <a href={`/admin/employees/${employee.id}`} className="underline font-medium">
+                              {employee.last_name} {employee.first_name}
+                            </a>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(employee.status)}`}>
+                              {getEmployeeStatusLabel(employee.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-          {filteredEmployees.length === 0 ? (
-            <p>Nessun dipendente trovato per questo appalto.</p>
-          ) : (
-            <div className="overflow-auto max-h-[360px] border rounded-xl">
-              <table className="w-full text-sm border-collapse">
-                <thead className="sticky top-0 bg-white">
-                  <tr className="border-b text-left">
-                    <th className="py-2 px-3">Dipendente</th>
-                    <th className="py-2 px-3">Stato</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredEmployees.map((employee) => (
-                    <tr key={employee.id} className="border-b">
-                      <td className="py-2 px-3">
-                        <a
-                          href={`/admin/employees/${employee.id}`}
-                          className="underline font-medium"
-                        >
-                          {employee.last_name} {employee.first_name}
-                        </a>
-                      </td>
-
-                      <td className="py-2 px-3">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(
-                            employee.status
-                          )}`}
-                        >
-                          {getEmployeeStatusLabel(employee.status)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div>
+                <h3 className="font-semibold mb-2">Sospesi ({suspendedEmployees.length})</h3>
+                <div className="overflow-y-auto max-h-[260px] border rounded-xl">
+                  <table className="w-full text-sm border-collapse">
+                    <tbody>
+                      {suspendedEmployees.map((employee) => (
+                        <tr key={employee.id} className="border-b last:border-b-0">
+                          <td className="py-2 px-3">
+                            <a href={`/admin/employees/${employee.id}`} className="underline font-medium">
+                              {employee.last_name} {employee.first_name}
+                            </a>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(employee.status)}`}>
+                              {getEmployeeStatusLabel(employee.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>
