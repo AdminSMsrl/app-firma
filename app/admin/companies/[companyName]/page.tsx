@@ -53,6 +53,8 @@ export default function CompanyPage({
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [showAllPending, setShowAllPending] = useState(false);
   const [showEmployees, setShowEmployees] = useState(false);
+  const [showDocumentSummary, setShowDocumentSummary] = useState(false);
+  const [openYears, setOpenYears] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     async function loadData() {
@@ -459,66 +461,122 @@ export default function CompanyPage({
           </div>
         )}
 
-        <div className="border rounded-2xl p-6 shadow-sm">
-          <h2 className="text-xl font-semibold mb-4">
-            Riepilogo documenti per periodo
-          </h2>
+        <div className="border rounded-2xl shadow-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowDocumentSummary(!showDocumentSummary)}
+            className="w-full flex items-center justify-between p-5 text-left"
+          >
+            <span className="text-xl font-semibold">
+              Riepilogo documenti per periodo
+            </span>
+            <span className="text-lg">
+              {showDocumentSummary ? "▲" : "▼"}
+            </span>
+          </button>
 
-          {documentGroups.length === 0 ? (
-            <p>Nessun documento presente.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {documentGroups.map((group) => (
-                <div
-                  key={group.key}
-                  className="border rounded-2xl p-4 shadow-sm space-y-3"
-                >
-                  <div>
-                    <p className="text-lg font-semibold">
-                      {getMonthName(group.month)} {group.year}
-                    </p>
+          {showDocumentSummary && (
+            <div className="px-5 pb-5 space-y-3">
+              {documentGroups.length === 0 ? (
+                <p>Nessun documento presente.</p>
+              ) : (
+                Object.entries(
+                  documentGroups.reduce<Record<number, DocumentGroup[]>>(
+                    (acc, group) => {
+                      if (!acc[group.year]) acc[group.year] = [];
+                      acc[group.year].push(group);
+                      return acc;
+                    },
+                    {}
+                  )
+                )
+                  .sort(([yearA], [yearB]) => Number(yearB) - Number(yearA))
+                  .map(([year, groups]) => {
+                    const numericYear = Number(year);
+                    const isOpen = openYears[numericYear] ?? false;
 
-                    <p className="text-sm text-gray-700 font-medium">
-                      {getDocumentCategoryLabel(group.category)}
-                    </p>
+                    return (
+                      <div
+                        key={year}
+                        className="border rounded-xl overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenYears((current) => ({
+                              ...current,
+                              [numericYear]: !isOpen,
+                            }))
+                          }
+                          className="w-full flex items-center justify-between px-4 py-3 text-left bg-gray-50"
+                        >
+                          <span className="font-semibold">{year}</span>
+                          <span>{isOpen ? "▲" : "▼"}</span>
+                        </button>
 
-                    <p className="text-sm text-gray-500">
-                      {group.total} documenti totali
-                    </p>
-                  </div>
+                        {isOpen && (
+                          <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {groups
+                              .sort((a, b) => b.month - a.month)
+                              .map((group) => (
+                                <div
+                                  key={group.key}
+                                  className="border rounded-2xl p-4 shadow-sm space-y-3"
+                                >
+                                  <div>
+                                    <p className="text-lg font-semibold">
+                                      {getMonthName(group.month)} {group.year}
+                                    </p>
 
-                  <div className="flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 border-green-200">
-                      Firmati: {group.signed}
-                    </span>
+                                    <p className="text-sm text-gray-700 font-medium">
+                                      {getDocumentCategoryLabel(group.category)}
+                                    </p>
 
-                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-yellow-100 text-yellow-700 border-yellow-200">
-                      Visualizzati: {group.viewed}
-                    </span>
+                                    <p className="text-sm text-gray-500">
+                                      {group.total} documenti totali
+                                    </p>
+                                  </div>
 
-                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 border-red-200">
-                      Da firmare: {group.available}
-                    </span>
-                    <button
-                      onClick={() =>
-                        handleDownloadSignedZip(
-                          group.month,
-                          group.year,
-                          group.category
-                        )
-                      }
-                      disabled={
-                        group.signed === 0 || downloadingZip === group.key
-                      }
-                      className="w-full mt-2 border rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {downloadingZip === group.key
-                        ? "Preparazione ZIP..."
-                        : `Scarica ${getDocumentCategoryLabel(group.category)}`}
-                    </button>
-                  </div>
-                </div>
-              ))}
+                                  <div className="flex flex-wrap gap-2">
+                                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-green-100 text-green-700 border-green-200">
+                                      Firmati: {group.signed}
+                                    </span>
+
+                                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-yellow-100 text-yellow-700 border-yellow-200">
+                                      Visualizzati: {group.viewed}
+                                    </span>
+
+                                    <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 border-red-200">
+                                      Da firmare: {group.available}
+                                    </span>
+
+                                    <button
+                                      onClick={() =>
+                                        handleDownloadSignedZip(
+                                          group.month,
+                                          group.year,
+                                          group.category
+                                        )
+                                      }
+                                      disabled={
+                                        group.signed === 0 ||
+                                        downloadingZip === group.key
+                                      }
+                                      className="w-full mt-2 border rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      {downloadingZip === group.key
+                                        ? "Preparazione ZIP..."
+                                        : `Scarica ${getDocumentCategoryLabel(group.category)}`}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+              )}
             </div>
           )}
         </div>
@@ -526,6 +584,8 @@ export default function CompanyPage({
     </main>
   );
 }
+
+
 
 
 
