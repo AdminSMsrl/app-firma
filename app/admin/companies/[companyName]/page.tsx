@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import JSZip from "jszip";
@@ -51,6 +51,7 @@ export default function CompanyPage({
   const [downloadingZip, setDownloadingZip] = useState("");
 
   const [employeeSearch, setEmployeeSearch] = useState("");
+  const [showAllPending, setShowAllPending] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -175,6 +176,7 @@ export default function CompanyPage({
   );
 
   const pendingDocuments = documents.filter((doc) => doc.status !== "signed");
+
 
   const filteredEmployees = employees.filter((employee) => {
     const query = employeeSearch.toLowerCase().trim();
@@ -359,48 +361,49 @@ export default function CompanyPage({
         </div>
 
         {pendingDocuments.length > 0 && (
-          <div className="border rounded-2xl p-6 shadow-sm bg-red-50 border-red-200">
-            <h2 className="text-xl font-semibold mb-4 text-red-700">
-              Documenti da firmare
-            </h2>
+          <div className="border rounded-2xl shadow-sm bg-red-50 border-red-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAllPending(!showAllPending)}
+              className="w-full flex items-center justify-between p-5 text-left"
+            >
+              <span className="text-xl font-semibold text-red-700">
+                Documenti da firmare ({pendingDocuments.length})
+              </span>
+              <span className="text-red-700 text-lg">
+                {showAllPending ? "▲" : "▼"}
+              </span>
+            </button>
 
-            <div className="space-y-2">
-              {pendingDocuments.slice(0, 8).map((doc) => {
-                const employee = employeesById[doc.employee_id];
-
-                return (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between gap-4 border rounded-xl p-3 bg-white"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {employee
-                          ? `${employee.last_name} ${employee.first_name}`
-                          : "Dipendente"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {getDocumentTypeLabel(doc.document_type)} {doc.month}/
-                        {doc.year} · {getDocumentStatusLabel(doc.status)}
-                      </p>
-                    </div>
-
-                    <a
-                      href={`/admin/employees/${doc.employee_id}`}
-                      className="border rounded-lg px-3 py-1 text-sm"
-                    >
-                      Apri
-                    </a>
-                  </div>
-                );
-              })}
-            </div>
-
-            {pendingDocuments.length > 8 && (
-              <p className="text-sm text-red-700 mt-3">
-                Altri {pendingDocuments.length - 8} documenti richiedono
-                attenzione.
-              </p>
+            {showAllPending && (
+              <div className="px-5 pb-5">
+                <div className="space-y-2 max-h-[360px] overflow-y-auto pr-2">
+                  {pendingDocuments.map((doc) => {
+                    const employee = employeesById[doc.employee_id];
+                    return (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between gap-4 border rounded-xl p-3 bg-white"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {employee ? `${employee.last_name} ${employee.first_name}` : "Dipendente"}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {getDocumentTypeLabel(doc.document_type)} {doc.month}/{doc.year} - {getDocumentStatusLabel(doc.status)}
+                          </p>
+                        </div>
+                        <a
+                          href={`/admin/employees/${doc.employee_id}`}
+                          className="border rounded-lg px-3 py-1 text-sm"
+                        >
+                          Apri
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -445,7 +448,6 @@ export default function CompanyPage({
                     <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold bg-red-100 text-red-700 border-red-200">
                       Da firmare: {group.available}
                     </span>
-
                     <button
                       onClick={() =>
                         handleDownloadSignedZip(
@@ -532,3 +534,8 @@ export default function CompanyPage({
     </main>
   );
 }
+
+
+
+
+
