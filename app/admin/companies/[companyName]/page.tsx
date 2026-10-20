@@ -340,28 +340,75 @@ export default function CompanyPage({
 
         {message && <p className="text-sm text-red-600">{message}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="border rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Dipendenti</p>
-            <p className="text-2xl font-bold">{employees.length}</p>
-          </div>
+        <div className="border rounded-2xl shadow-sm overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowEmployees(!showEmployees)}
+            className="w-full flex items-center justify-between p-5 text-left"
+          >
+            <span className="text-xl font-semibold">Dipendenti ({employees.length})</span>
+            <span className="text-lg">{showEmployees ? "▲" : "▼"}</span>
+          </button>
 
-          <div className="border rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Documenti</p>
-            <p className="text-2xl font-bold">{documents.length}</p>
-          </div>
+          {showEmployees && (
+            <div className="px-5 pb-5 space-y-5">
+              <input
+                type="text"
+                placeholder="Cerca dipendente"
+                className="border rounded-lg px-4 py-2 w-full"
+                value={employeeSearch}
+                onChange={(e) => setEmployeeSearch(e.target.value)}
+              />
 
-          <div className="border rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Firmati</p>
-            <p className="text-2xl font-bold">
-              {documents.filter((doc) => doc.status === "signed").length}
-            </p>
-          </div>
+              <div>
+                <h3 className="font-semibold mb-2">Attivi ({activeEmployees.length})</h3>
+                <div className="overflow-y-auto max-h-[260px] border rounded-xl">
+                  <table className="w-full text-sm border-collapse">
+                    <tbody>
+                      {activeEmployees.map((employee) => (
+                        <tr key={employee.id} className="border-b last:border-b-0">
+                          <td className="py-2 px-3">
+                            <a href={`/admin/employees/${employee.id}`} className="underline font-medium">
+                              {employee.last_name} {employee.first_name}
+                            </a>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(employee.status)}`}>
+                              {getEmployeeStatusLabel(employee.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-          <div className="border rounded-2xl p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Da firmare</p>
-            <p className="text-2xl font-bold">{pendingDocuments.length}</p>
-          </div>
+              <div>
+                <h3 className="font-semibold mb-2">Sospesi ({suspendedEmployees.length})</h3>
+                <div className="overflow-y-auto max-h-[260px] border rounded-xl">
+                  <table className="w-full text-sm border-collapse">
+                    <tbody>
+                      {suspendedEmployees.map((employee) => (
+                        <tr key={employee.id} className="border-b last:border-b-0">
+                          <td className="py-2 px-3">
+                            <a href={`/admin/employees/${employee.id}`} className="underline font-medium">
+                              {employee.last_name} {employee.first_name}
+                            </a>
+                          </td>
+                          <td className="py-2 px-3 text-right">
+                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(employee.status)}`}>
+                              {getEmployeeStatusLabel(employee.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {pendingDocuments.length > 0 && (
@@ -475,80 +522,11 @@ export default function CompanyPage({
             </div>
           )}
         </div>
-        <div className="border rounded-2xl shadow-sm overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowEmployees(!showEmployees)}
-            className="w-full flex items-center justify-between p-5 text-left"
-          >
-            <span className="text-xl font-semibold">Dipendenti ({employees.length})</span>
-            <span className="text-lg">{showEmployees ? "▲" : "▼"}</span>
-          </button>
-
-          {showEmployees && (
-            <div className="px-5 pb-5 space-y-5">
-              <input
-                type="text"
-                placeholder="Cerca dipendente"
-                className="border rounded-lg px-4 py-2 w-full"
-                value={employeeSearch}
-                onChange={(e) => setEmployeeSearch(e.target.value)}
-              />
-
-              <div>
-                <h3 className="font-semibold mb-2">Attivi ({activeEmployees.length})</h3>
-                <div className="overflow-y-auto max-h-[260px] border rounded-xl">
-                  <table className="w-full text-sm border-collapse">
-                    <tbody>
-                      {activeEmployees.map((employee) => (
-                        <tr key={employee.id} className="border-b last:border-b-0">
-                          <td className="py-2 px-3">
-                            <a href={`/admin/employees/${employee.id}`} className="underline font-medium">
-                              {employee.last_name} {employee.first_name}
-                            </a>
-                          </td>
-                          <td className="py-2 px-3 text-right">
-                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(employee.status)}`}>
-                              {getEmployeeStatusLabel(employee.status)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">Sospesi ({suspendedEmployees.length})</h3>
-                <div className="overflow-y-auto max-h-[260px] border rounded-xl">
-                  <table className="w-full text-sm border-collapse">
-                    <tbody>
-                      {suspendedEmployees.map((employee) => (
-                        <tr key={employee.id} className="border-b last:border-b-0">
-                          <td className="py-2 px-3">
-                            <a href={`/admin/employees/${employee.id}`} className="underline font-medium">
-                              {employee.last_name} {employee.first_name}
-                            </a>
-                          </td>
-                          <td className="py-2 px-3 text-right">
-                            <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getEmployeeStatusClass(employee.status)}`}>
-                              {getEmployeeStatusLabel(employee.status)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </section>
     </main>
   );
 }
+
 
 
 
