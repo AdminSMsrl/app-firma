@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
@@ -31,6 +31,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
+    if (action === "reactivate") {
+      const { error } = await supabase
+        .from("employees")
+        .update({ status: "active" })
+        .eq("id", id);
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true });
+    }
     if (action === "update") {
       if (!data) {
         return NextResponse.json(
@@ -66,3 +78,4 @@ export async function POST(req: Request) {
     );
   }
 }
+

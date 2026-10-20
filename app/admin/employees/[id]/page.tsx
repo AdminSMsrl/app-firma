@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
@@ -192,6 +192,38 @@ export default function EmployeeDetailPage({
     setMessage("Dipendente sospeso correttamente");
   };
 
+  const handleReactivate = async () => {
+    if (!employee) return;
+
+    const confirmed = window.confirm(
+      "Vuoi riattivare questo dipendente?"
+    );
+
+    if (!confirmed) return;
+
+    setMessage("");
+
+    const response = await fetch("/api/admin/update-employee", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: employee.id,
+        action: "reactivate",
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setMessage(result.error || "Errore riattivazione dipendente");
+      return;
+    }
+
+    setEmployee({ ...employee, status: "active" });
+    setMessage("Dipendente riattivato correttamente");
+  };
   const handleDeleteEmployee = async () => {
     if (!employee) return;
 
@@ -202,7 +234,7 @@ export default function EmployeeDetailPage({
         "- firme salvate\n" +
         "- documenti caricati\n" +
         "- PDF firmati\n\n" +
-        "Questa operazione NON è reversibile.\n\n" +
+        "Questa operazione NON Ã¨ reversibile.\n\n" +
         "Vuoi continuare?"
     );
 
@@ -258,7 +290,7 @@ export default function EmployeeDetailPage({
     const confirmed = window.confirm(
       "Sei sicuro di voler eliminare definitivamente questo documento?\n\n" +
         "Verranno eliminati anche l'eventuale PDF firmato e i dati collegati alla firma.\n\n" +
-        "Questa operazione NON può essere annullata."
+        "Questa operazione NON puÃ² essere annullata."
     );
 
     if (!confirmed) return;
@@ -330,7 +362,7 @@ export default function EmployeeDetailPage({
                 href={getCompanyUrl()}
                 className="border rounded-lg px-4 py-2"
               >
-                ← Torna all'appalto
+                â† Torna all'appalto
               </a>
             )}
 
@@ -404,10 +436,10 @@ export default function EmployeeDetailPage({
             </button>
 
             <button
-              onClick={handleSuspend}
+              onClick={employee.status === "suspended" ? handleReactivate : handleSuspend}
               className="border rounded-lg px-4 py-2"
             >
-              Sospendi dipendente
+              {employee.status === "suspended" ? "Riattiva dipendente" : "Sospendi dipendente"}
             </button>
 
             <button
@@ -509,3 +541,4 @@ export default function EmployeeDetailPage({
     </main>
   );
 }
+
