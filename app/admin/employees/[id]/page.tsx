@@ -362,7 +362,7 @@ export default function EmployeeDetailPage({
                 href={getCompanyUrl()}
                 className="border rounded-lg px-4 py-2"
               >
-                â† Torna all'appalto
+                &larr; Torna all'appalto
               </a>
             )}
 
@@ -541,4 +541,5 @@ export default function EmployeeDetailPage({
     </main>
   );
 }
+
 
