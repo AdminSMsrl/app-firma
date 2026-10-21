@@ -302,12 +302,12 @@ export default function AdminPage() {
 
           <div className="border rounded-2xl p-4 shadow-sm">
             <p className="text-sm text-gray-500">Dipendenti attivi</p>
-            <p className="text-2xl font-bold">{employees.filter((employee) => employee.status === "active").length}</p>
+            <p className="text-2xl font-bold text-green-600">{employees.filter((employee) => employee.status === "active").length}</p>
           </div>
 
           <div className="border rounded-2xl p-4 shadow-sm">
             <p className="text-sm text-gray-500">Dipendenti sospesi</p>
-            <p className="text-2xl font-bold">
+            <p className="text-2xl font-bold text-red-600">
               {employees.filter((employee) => employee.status === "suspended").length}
             </p>
           </div>
@@ -505,4 +505,5 @@ export default function AdminPage() {
     </main>
   );
 }
+
 
