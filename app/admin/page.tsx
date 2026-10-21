@@ -295,17 +295,17 @@ export default function AdminPage() {
         {message && <p className="text-sm text-red-600">{message}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-          <div className="border rounded-2xl p-3 md:p-4 shadow-sm">
+          <div className="border rounded-2xl px-3 py-2.5 md:p-4 shadow-sm">
             <p className="text-sm text-gray-500">Dipendenti totali</p>
             <p className="text-2xl font-bold">{employees.length}</p>
           </div>
 
-          <div className="border rounded-2xl p-3 md:p-4 shadow-sm">
+          <div className="border rounded-2xl px-3 py-2.5 md:p-4 shadow-sm">
             <p className="text-sm text-gray-500">Dipendenti attivi</p>
             <p className="text-2xl font-bold text-green-600">{employees.filter((employee) => employee.status === "active").length}</p>
           </div>
 
-          <div className="border rounded-2xl p-3 md:p-4 shadow-sm">
+          <div className="border rounded-2xl px-3 py-2.5 md:p-4 shadow-sm">
             <p className="text-sm text-gray-500">Dipendenti sospesi</p>
             <p className="text-2xl font-bold text-red-600">
               {employees.filter((employee) => employee.status === "suspended").length}
@@ -505,6 +505,7 @@ export default function AdminPage() {
     </main>
   );
 }
+
 
 
 
